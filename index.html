@@ -1,0 +1,133 @@
+<!-- 注意：加了doctype html的话，JS就必须要符号规范，设置width、height、top等等时，必须要加上px，由于后面代码有些没有加px，所有就不能加doctype html-->
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>贪吃蛇</title>
+    <script src="snow.js"></script>
+    <script src="snake.js"></script>
+    <link rel="shortcut icon" href="snake.ico" />
+    <link rel="stylesheet" href="snake.css" />
+</head>
+
+<body style="margin:36px 0;">
+    <h2 style="text-align:center; color:red">按
+        <span class="enter">回车</span>开始/暂停</h2>
+    <h3 style="text-align:center; color:#FF9106">说明:1.↑↓←→控制方向，长按加速
+        <br>
+        <span style="text-indent:4.1em; display:inline-block">2.每获得5分进入下一关，速度加快</span>
+    </h3>
+    <h2 id="h2">
+        <strong>得分</strong>:
+        <div id="scoreBox" style="top:0px">
+            <div id="first">0</div>
+            <div id="second">0</div>
+        </div>
+        <i style="display:inline-block; height:20px; width:90px;"></i>
+        <strong>关卡</strong>:
+        <strong id="pass">1</strong>
+    </h2>
+    <div style="text-align: center;">
+        <button style="cursor: pointer;width: 100px;height: 30px;font-size: 20px" id="script">开启AI</button>
+    </div>
+    <!--游戏结束画面-->
+    <div id="gameOver">
+        <div>
+            <!--灰色半透明背景-->
+        </div>
+        <!--前景小窗-->
+        <p>Game Over!
+            <br>
+            <img src="images/cry.gif" />
+            <br>
+            <span>本次得分:
+                <strong id="score"></strong>
+            </span>
+            <br>
+            <!--点击重置游戏(下面的变量不能加var，加了var的话是不会影响后面的函数的，因为语句是写在行间的)-->
+            <a class="button" id="a" onclick="
+            initSpeed=200;
+            grade=0;
+            flag=1;
+            isBegin=true;
+            timer=null;
+            document.body.removeChild(map.map1);
+            first.innerHTML=0;
+            second.innerHTML=0;
+            pass.innerHTML=1;
+            map=new Map();
+            map.show();
+            snake=new Snake();
+            snake.show();
+            food=new Food();
+            food.show();
+            snake.direct='right';
+            snake.speed();
+            gameOver.style.display='none';">Try again!
+            </a>
+        </p>
+    </div>
+    <p id="paused">Paused...</p>
+    <div class="img">
+        <img class="picLeft" src="images/pic-l.jpg" />
+        <img class="picRight" height="192" src="images/pic-r.jpg" />
+    </div>
+    <!--[if IE]>
+<bgsound src='' id="sound" >
+<![endif]-->
+    <![if !IE]>
+    <audio src='' id="sound" autoplay="autoplay">
+    </audio>
+    <![endif]>
+
+    <!--游戏开始画面-->
+    <div id="gameStart">
+        <div>
+            <img id="fireworks-l" src="images/fireworks.gif" />
+            <img id="fireworks-r" src="images/fireworks.gif" />
+            <img id="tan" width="130" src="images/tan.png" />
+            <img id="chi" width="170" src="images/chi.png" />
+            <img id="she" width="130" src="images/she.png" />
+            <img id="start" width="200" src="images/start.png" />
+        </div>
+    </div>
+    <div id="highScore">
+
+    </div>
+    <center>© 2016-2018 JiangLei</center>
+    <script>
+        var snow = new Snow();
+        start.onclick = function () {
+            gameStart.style.opacity = 0;
+            setTimeout(function () {
+                gameStart.style.display = 'none';
+            }, 2000);
+        }
+        start.onmouseover = function () {
+            this.src = 'images/start-hover.png';
+        }
+        start.onmouseout = function () {
+            this.src = 'images/start.png';
+        }
+        setTimeout(function () {
+            start.style.display = 'block';
+            start.style.opacity = 1;
+            start.style.transform = 'scale(1)';
+        }, 2300);
+        setTimeout(function () {
+            tan.style.left = '300px';
+            tan.style.transform = 'rotate(3600deg)';
+        }, 50);
+        setTimeout(function () {
+            chi.style.top = '6px';
+            chi.style.transform = 'rotate(1080deg)';
+        }, 50);
+        setTimeout(function () {
+            she.style.right = '345px';
+            she.style.transform = 'rotate(3600deg)';
+        }, 50);
+    </script>
+
+</body>
+
+</html>
