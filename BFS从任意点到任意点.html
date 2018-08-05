@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+
+    <style type="text/css">
+    div:not(#box):not(#move){width: 30px;height:30px;float: left;line-height: 30px;text-align: center;}
+    #box{border: 1px solid red;overflow: hidden;margin:100px auto;position: relative;}
+    #move{position: absolute;width: 30px;height:30px;background:green;}
+    </style>
+</head>
+
+<body>
+<div id="box">
+    <div id="move"></div>
+</div>
+
+<script type="text/javascript"> 
+var map = [
+    [0, 0, 0,0,0],
+    [0, 0, 0,0,0],
+    [0, 0, 0,0,0],
+    [0, 0, 0,0,0],
+    [0, 0, 0,0,0]
+]
+for(var i=0;i<map.length;i++){
+    for(var j=0;j<map[0].length;j++){
+        var div=document.createElement('div')
+        if(map[i][j]==1){
+            div.style.background='gray'
+        }
+        box.appendChild(div)
+    }
+}
+box.style.width=map[0].length*30+2+'px'
+var one = [[-1, 0], [1, 0], [0, -1], [0, 1]];//上下左右移动坐标的变化
+var nextpath = ["U", "D", "L", "R"];//上下左右移动的表示
+//点类记录当前坐标，步数，路径,step表示从出发到当前点经过几步,path表示从出发到当前点经过路径
+function Point(x, y, step, path) {
+    this.x = x;
+    this.y = y;
+    this.step = step;
+    this.path = path;
+}
+//按字典序较小选择路径
+function judge(A, B) {
+    for (var i = 0; i < A.length; i++) {
+        if (A[i] < B[i]) {
+            return false
+        }
+    }
+    return true;
+}
+//判断点是否出界或被访问过
+function check(map, cunrrentPoint) {
+    var n = map.length - 1;
+    var m = map[0].length - 1;
+    if (cunrrentPoint.x < 0 || cunrrentPoint.x > n || cunrrentPoint.y < 0 || cunrrentPoint.y > m || map[cunrrentPoint.x][cunrrentPoint.y] == 1)
+        return false;
+    return true;
+}
+//搜索路径
+function BFS(map, startArr, endArr) {
+    move.style.top=startArr[0]*30+'px'
+    move.style.left=startArr[1]*30+'px'
+    box.children[map[0].length*endArr[0]+endArr[1]+1].innerHTML='终'//要+1是因为还有一个move的div存在
+    var list = [];
+    list.push(new Point(startArr[0], startArr[1], 0, ''))//向队列中加入第一个点
+    var minStep = 10000//最小步数
+    var minPath = '';//最短路径
+    while (list.length != 0) {
+        var cunrrentPoint = list[0];//当队列中有点时，取出点比较是否为终点
+        list.shift();//删除该点
+        if (cunrrentPoint.x == endArr[0] && cunrrentPoint.y == endArr[1]) {
+            if (minStep > cunrrentPoint.step) {
+                minStep = cunrrentPoint.step;
+                minPath = cunrrentPoint.path;
+            } else if (minStep == cunrrentPoint.step) {
+                if (judge(minPath, cunrrentPoint.path)) {
+                    minPath = cunrrentPoint.path;
+                }
+            }
+            continue;
+
+        }
+        //如果不是终点，依次尝试访问上下左右，并加入队列继续循环
+        for (var i = 0; i < 4; i++) {
+            var x = cunrrentPoint.x + one[i][0];
+            var y = cunrrentPoint.y + one[i][1];
+            var step = cunrrentPoint.step + 1;
+            var path = cunrrentPoint.path + nextpath[i];
+            var point = new Point(x, y, step, path);
+            if (check(map, point)) {
+                list.push(point);
+                map[x][y] = 1;
+            }
+        }
+    }
+    console.log(minPath, minStep==10000?'没有通路':minStep);//循环结束输出最短步数及路径
+    for(let i=0;i<minPath.length;i++){
+        setTimeout(function(){
+            switch (minPath[i]){
+                case 'U':
+                move.style.top=parseInt(getComputedStyle(move).top)-30+'px'
+                break;
+                case 'D':
+                move.style.top=parseInt(getComputedStyle(move).top)+30+'px'
+                break;
+                case 'L':
+                move.style.left=parseInt(getComputedStyle(move).left)-30+'px'
+                break;
+                case 'R':
+                move.style.left=parseInt(getComputedStyle(move).left)+30+'px'
+                break;
+            }
+        },(i+1)*800)
+    }
+    return;
+}
+
+BFS(map, [4,4], [0,0]);//map数组，起点，终点
+</script>
+</body>
+
+</html>
