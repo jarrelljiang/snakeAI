@@ -96,9 +96,35 @@ function Food() {
         this._food.style.background = this.background;
         this.x = Math.floor(Math.random() * map.width / this.width);
         this.y = Math.floor(Math.random() * map.height / this.width);
-        //新生成的食物不能出现在蛇身(可以利用后面不能撞到蛇身的方法，更简单)
-        arrx = [];
-        arry = [];
+        //新生成的食物不能出现在蛇身(可以利用后面不能撞到蛇身的方法，更简单)(这种方法到后期蛇占据地图很多的时候不行，概率会很低，性能差)
+        //新方法，在地图中排除掉蛇占据的坐标，然后在其中随机生成食物
+        var mapArr = []
+        for (var i = 0; i < map.height / food.height; i++) {
+            for (var j = 0; j < map.width / food.width; j++) {
+                mapArr.push([j, i])
+            }
+        }
+        var allow = true
+        var availableArr = [];
+        for (var j = 0; j < mapArr.length; j++) {
+            allow = true
+            for (var i = 0; i < snake.body.length; i++) {
+                if (snake.body[i][0] == mapArr[j][0] && snake.body[i][1] == mapArr[j][1]) {
+                    allow = false
+                    break;
+
+                }
+            }
+            if (allow) availableArr.push(mapArr[j])
+        }
+        var randomIndex = Math.floor(Math.random() * availableArr.length)
+        this.x = availableArr[randomIndex][0]
+        this.y = availableArr[randomIndex][1]
+        this._food.style.left = this.x * this.width;
+        this._food.style.top = this.y * this.height;
+        map._map.appendChild(this._food);
+        /* arrx = [];//蛇身所有点的x坐标
+        arry = [];//蛇身所有点的y坐标
         for (var i = 0; i < snake.body.length; i++) {
             arrx.push(snake.body[i][0]);
         }
@@ -117,7 +143,7 @@ function Food() {
                 map._map.appendChild(this._food);
                 break;
             }
-        }
+        } */
     }
 }
 //蛇类
@@ -127,7 +153,7 @@ function Snake() {
     this.position = 'absolute';
     this.direct = null;//移动方向
     //初始蛇身
-    //这里的null是蛇身的dom元素，先有null表示，后面会创建实际的dom元素插入视图
+    //这里的null是蛇身的dom元素，先用null表示，后面会创建实际的dom元素插入视图
     this.body = new Array(
         [4, 2, 'url(images/head-right.png)', null],//蛇头
         [3, 2, 'url(images/body1.png)', null],
@@ -297,7 +323,7 @@ function Snake() {
             }
 
             this.move();
-        }.bind(this), initSpeed);//或者:        	timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
+        }.bind(this), initSpeed);//或者:          timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
     }
     //条件处理
     this.condition = function () {
@@ -805,7 +831,8 @@ window.onload = function () {
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
     script.onclick = function () {
-        initSpeed = 15
+        initSpeed = 20
         fireKeyEvent(document.documentElement, 'keydown', 13);
+        isBegin = true;
     }
 }
