@@ -3,6 +3,11 @@
 
 <head>
     <title></title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+    <link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
+    <script type="text/javascript" src="js/jquery-1.11.3.js"></script>
+    <script type="text/javascript" src="js/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/bootstrap.js"></script>
 
     <style type="text/css">
     div:not(#box):not(#move){width: 30px;height:30px;float: left;line-height: 30px;text-align: center;}
@@ -81,7 +86,7 @@ function BFS(map, startArr, endArr) {
                     minPath = cunrrentPoint.path;
                 }
             }
-            continue;
+            continue;//这里好像改成break也行，而且性能更好，找到终点就停止，不会把所有点都改为1
 
         }
         //如果不是终点，依次尝试访问上下左右，并加入队列继续循环
@@ -118,8 +123,8 @@ function BFS(map, startArr, endArr) {
     }
     return;
 }
-
-BFS(map, [4,4], [0,0]);//map数组，起点，终点
+BFS(map, [0,0], [1,1]);//map数组，起点，终点
+console.log(map)
 </script>
 </body>
 
