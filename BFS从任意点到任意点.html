@@ -39,8 +39,8 @@ for(var i=0;i<map.length;i++){
     }
 }
 box.style.width=map[0].length*30+2+'px'
-var one = [[-1, 0], [1, 0], [0, -1], [0, 1]];//上下左右移动坐标的变化
-var nextpath = ["U", "D", "L", "R"];//上下左右移动的表示
+var one = [[0, 1],[-1, 0], [1, 0], [0, -1] ];//上下左右移动坐标的变化
+var nextpath = ["R","U", "D", "L"];//上下左右移动的表示
 //点类记录当前坐标，步数，路径,step表示从出发到当前点经过几步,path表示从出发到当前点经过路径
 function Point(x, y, step, path) {
     this.x = x;
@@ -50,7 +50,8 @@ function Point(x, y, step, path) {
 }
 //按字典序较小选择路径
 function judge(A, B) {
-    for (var i = 0; i < A.length; i++) {
+    console.log(A,B)
+    for (var i = 0; i < A.length; i++) {//A:DR B:RD
         if (A[i] < B[i]) {
             return false
         }
@@ -76,8 +77,11 @@ function BFS(map, startArr, endArr) {
     var minPath = '';//最短路径
     while (list.length != 0) {
         var cunrrentPoint = list[0];//当队列中有点时，取出点比较是否为终点
+        ////cunrrentPoint的坐标是终点的个数只可能是一个，因为遍历是有先后顺序的，先遍历到终点的点就已经把坐标给占了，标为1了，后面的不能访问,所以judge函数其实没用，不会执行
+        ////console.log(cunrrentPoint.x,cunrrentPoint,y)打印出来所有的坐标中只有一个等于终点坐标，所以judge函数其实没用，不会执行
         list.shift();//删除该点
         if (cunrrentPoint.x == endArr[0] && cunrrentPoint.y == endArr[1]) {
+
             if (minStep > cunrrentPoint.step) {
                 minStep = cunrrentPoint.step;
                 minPath = cunrrentPoint.path;
