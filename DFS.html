@@ -5,21 +5,21 @@
 </head>
 <body>
 <script type="text/javascript">
-var min=[]
-min.length=1000
+var min=''
 var next=[[0,1],[1,0],[0,-1],[-1,0]]//右下左上
 var d=['R','D','L','U']
 var map=[//注意起点初始要设为1
-	[1,0,0],
-	[0,0,0],
-	[0,0,0]
+	[1,0,0,0],
+	[1,0,0,1],
+	[0,0,0,0],
+	[1,0,0,0]
 ]
-var book=map.map(item=>[...item])
+
 function DFS(map,startArr,endArr,diret){
 	var t=[]//下一步的坐标
 	if(startArr[0]==endArr[0]&&startArr[1]==endArr[1]){//是否到达终点
 		console.log(diret)
-		if(diret.length<min.length){
+		if(min.length==0||diret.length<min.length){
 			min=diret
 		}
 		return;
@@ -31,17 +31,21 @@ function DFS(map,startArr,endArr,diret){
 		if(t[0]<0||t[0]>map.length-1||t[0]<0||t[1]>map[0].length-1){//越界
 			continue;
 		}
-		if(map[t[0]][t[1]]==0&&book[t[0]][t[1]]==0){
-			book[t[0]][t[1]]=1//标记走过
+		if(map[t[0]][t[1]]==0){
+			map[t[0]][t[1]]=1//标记走过
 			DFS(map,[t[0],t[1]],endArr,diret+d[k]);
-			book[t[0]][t[1]]=0//一个方向尝试结束后取消标记
+			map[t[0]][t[1]]=0//一个方向尝试结束后取消标记
 		}
 	}
 	return
 }
 
 DFS(map,[0,0],[map.length-1,map[0].length-1],'')
-console.log('最短路径为：'+min)
+if(min.length>0){
+	console.log('最短路径为：'+min)
+}else{
+	console.log('没有通路')
+}
 </script>
 </body>
 </html>
