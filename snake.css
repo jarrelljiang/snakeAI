@@ -4,6 +4,11 @@ body {
     overflow: hidden;
 }
 
+#bodyMap div {
+    background-repeat: no-repeat !important;
+    background-size: 96% !important;
+}
+
 #h2 {
     height: 28px;
     line-height: 28px;

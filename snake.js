@@ -106,7 +106,7 @@ function DFS(map, startArr, endArr, diret) {
     }
     //枚举4个方向的走法
     for (var k = 0; k < 4; k++) {
-        if (total > 1000000) break;
+        if (total > 2000000) break;
         t[0] = startArr[0] + next[k][0]
         t[1] = startArr[1] + next[k][1]
         if (t[0] < 0 || t[0] > map.length - 1 || t[0] < 0 || t[1] > map[0].length - 1) {//越界
@@ -200,8 +200,8 @@ function Food() {
             }
         }
         var allow = true
-        var availableArr = [];
-        for (var j = 0; j < mapArr.length; j++) {
+        var availableArr = [];//[2,7]
+        for (var j = 0; j < mapArr.length; j++) {//把地图的每一个格子一个个拿去给蛇身的每个格子比
             allow = true
             for (var i = 0; i < snake.body.length; i++) {
                 if (snake.body[i][0] == mapArr[j][0] && snake.body[i][1] == mapArr[j][1]) {
@@ -333,12 +333,12 @@ function Snake() {
         //先判断按最短路径能不能吃到食物。
         BFS(mapArr1, [this.body[0][1], this.body[0][0]], [food.y, food.x]);//map数组，起点，终点
         if (minStep < 10000) {//按照最短路径能吃到食物
-            console.log('最短路径能吃到食物', minPath)
+            //console.log('最短路径能吃到食物', minPath)
             //判断虚拟蛇按最短路径吃到食物后，蛇头和蛇尾能不能连通
             var cacheMinPath = [...minPath]
             this.virtualEatFood(minPath[0][0])
             if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheMinPath
-                console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
+                //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
                 switch (cacheMinPath[0][0]) {
                     case 'U':
                         this.direct = 'up'
@@ -356,12 +356,12 @@ function Snake() {
             } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheMinPath[1]存在，先向着cacheMinPath[1]走，
                     还是先让虚拟蛇去探路，假如cacheMinPath[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheMinPath[1]
                     走完后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走 */
-                console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾不能连通')
+                //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾不能连通')
                 if (cacheMinPath[1]) {//假如cacheMinPath[1]存在，先向着cacheMinPath[1]走
-                    console.log('cacheMinPath[1]存在')
-                    this.virtualEatFood(cacheMinPath[1][0]);
+                    //console.log('cacheMinPath[1]存在')
+                    this.virtualEatFood(cacheMinPath[1][0], true);
                     if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
-                        console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
+                        //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
                         switch (cacheMinPath[1][0]) {
                             case 'U':
                                 this.direct = 'up'
@@ -377,17 +377,17 @@ function Snake() {
                                 break;
                         }
                     } else {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
-                        console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
+                        //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
                         this.moveToTail(tailIndex);
                     }
                 } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
-                    console.log('cacheMinPath[1]不存在')
+                    //console.log('cacheMinPath[1]不存在')
                     this.moveToTail(tailIndex);
                 }
 
             }
         } else {//最短路径不能吃到食物，就按照BFS去找蛇尾(或者走距离蛇尾最远的那个方向),如果蛇尾也找不到，就走距离蛇尾最远的那个方向(待定实现)
-            console.log('最短路径不能吃到食物')
+            //console.log('最短路径不能吃到食物')
             this.moveToTail(tailIndex);
             if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
         }
@@ -531,7 +531,7 @@ function Snake() {
          */
         DFS(mapArr, [this.body[0][1], this.body[0][0]], [this.body[tailIndex][1], this.body[tailIndex][0]], '');
         if (max) {
-            console.log('最长路径追蛇尾-' + max)
+            //console.log('最长路径追蛇尾-' + max)
             switch (max[0]) {
                 case 'U':
                     this.direct = 'up'
@@ -569,7 +569,7 @@ function Snake() {
             }
         }
     }
-    this.virtualEatFood = function (nextDiret) {
+    this.virtualEatFood = function (nextDiret, two) {
         this.virtualBody = this.body.map(item => [...item])
         /* for (var i of minPath) {
                 this.virtualMove(i)
@@ -581,7 +581,17 @@ function Snake() {
                 mapArr[this.virtualBody[i][1]][this.virtualBody[i][0]] = 1
             }
             BFS(mapArr, [this.virtualBody[0][1], this.virtualBody[0][0]], [food.y, food.x])
-            this.virtualMove(minPath[0][0])
+            /* 
+                因为虚拟蛇每走一步都是重新搜索路线的，此virtualEatFood方法中只是虚拟蛇走第一步时用的cacheDiret[1][0],
+                也就是minPath[1][0]，但是下面一行走第二步时还是用的minPath[0][0]，然后等虚拟蛇走完吃到食物有可能会报告
+                这条路也不通。
+             */
+            //this.virtualMove(minPath[0][0])//！！！问题在这
+            if (minPath[1] && two) {
+                this.virtualMove(minPath[1][0])
+            } else {
+                this.virtualMove(minPath[0][0])
+            }
         }
         this.virtualSnakeHasEat = false;
         var mapArr = map.initMapArr.map(item => [...item])
@@ -639,11 +649,21 @@ function Snake() {
         //吃食物
         document.all.sound.src = 'music/eat.mp3';
         grade++;
-        //蛇身的show是在push前面的，所以这里push了新蛇身后要到走下一步的时候才会show出来
+        //console.log(grade)//看看最后是不是196//200-4
         this.body.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
         //this.body.push([-20, -20, 'url(images/tail-right.png)', null]);//-20是特意把刚吃掉的食物的初始位置挪出游戏区域隐藏，定时器再次执行snake.move()时又会设置它的位置。此举就是为了消除吃掉食物时定时器时间间隙产生的食物
         map._map.removeChild(food._food);
-        food.show();
+        /* 
+            其实最后一个食物已经吃下了，蛇身数组也增加了(此时数据上已经把地图填满,只是视图上看起来缺1个)
+            因为这里的逻辑是先生成下一个食物，再刷新视图，所以生成下一个食物时报错了，因为地图已经填满了，
+            只是还没刷新，可惜代码已经异常停止了。
+         */
+        if (this.body.length != 200) {
+            food.show();
+        } else {
+            clearInterval(timer);
+        }
+
 
         //计分器效果（解决了当两次吃食物的间隔很小时(小于计分器变化的时间间隔)出现的问题）（轮播也可以用这个方法）
         if (getComputedStyle(scoreBox).top == '-28px') {
