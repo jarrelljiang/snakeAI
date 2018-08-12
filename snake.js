@@ -345,42 +345,6 @@ function Snake() {
     }
     //控制蛇移动
     this.move = function () {
-        /* if (this.body.length < 100) {
-            if (Math.random() < 0.5) {
-                one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-                nextpath = ["R", "L", "U", "D"];
-            } else {
-                one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
-                nextpath = ["U", "D", "R", "L"];
-            }
-        } else {
-            one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-            nextpath = ["R", "L", "U", "D"];
-        } */
-        if (this.body.length < 100) {
-            if (Math.random() < 0.7) {
-                one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-                nextpath = ["R", "L", "U", "D"];
-            } else {
-                one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
-                nextpath = ["U", "D", "R", "L"];
-            }
-        } else if (this.body.length < 120) {
-            one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
-            nextpath = ["U", "D", "R", "L"];
-        }
-        else if (this.body.length < 140) {
-            one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-            nextpath = ["R", "L", "U", "D"];
-        }
-        else if (this.body.length < 160) {
-            one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
-            nextpath = ["U", "D", "R", "L"];
-        }
-        else if (this.body.length < 200) {
-            one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
-            nextpath = ["R", "L", "U", "D"];
-        }
         /* ！！！！！！！！！！！在每次移动之前一定要设置this.virtualSnakeHasEat为false
           因为不仅仅下面找食物会改变this.virtualSnakeHasEat的值，而且后面movetoTail也会
           改变this.virtualSnakeHasEat的值，下个回合再走到这里时，一定要把this.virtualSnakeHasEat
