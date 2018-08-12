@@ -346,13 +346,20 @@ function Snake() {
     }
     //控制蛇移动
     this.move = function () {
+        /* if (Math.random() <= 0.9) {
+            one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
+            nextpath = ["R", "L", "U", "D"];
+        } else {
+            one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
+            nextpath = ["U", "D", "R", "L"];
+        } */
         /* ！！！！！！！！！！！在每次移动之前一定要设置this.virtualSnakeHasEat为false
           因为不仅仅下面找食物会改变this.virtualSnakeHasEat的值，而且后面movetoTail也会
           改变this.virtualSnakeHasEat的值，下个回合再走到这里时，一定要把this.virtualSnakeHasEat
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 170) {
+        if (this.body.length > 130) {//130是100%通关的
             //1.首先从蛇头周围4个格子方向选出不是蛇身和越界的，让虚拟蛇走一步到那个格子
             //2.以虚拟蛇能走的所有格子为起点，找出到食物最小距离最大的格子方向，且必须按最小距离吃完食物后蛇头蛇尾能连通才有效
             //console.log('最远吃食物')
@@ -383,13 +390,13 @@ function Snake() {
             }//到这里，就拿到了距食物最远的方向，是一个数组，里面有可能存在2个值。然后分别判断虚拟蛇沿这2个方向吃完后蛇头蛇尾能不能连通
             this.virtualSnakeHasEat = false
             if (bfsNextFarDiret.length > 0) {//按照最远路径能吃到食物
-                console.log('最远路径能吃到食物', bfsNextFarDiret)
+                //console.log('最远路径能吃到食物', bfsNextFarDiret)
                 //console.log(mapArr, [this.body[0][1], this.body[0][0]], [food.y, food.x])
                 //判断虚拟蛇按最远路径吃到食物后，蛇头和蛇尾能不能连通
                 var cacheBfsNextFarDiret = [...bfsNextFarDiret]
                 this.virtualEatFood(bfsNextFarDiret[0][0], false)
                 if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheBfsNextFarDiret
-                    console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾能连通')
+                    //console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾能连通')
                     switch (cacheBfsNextFarDiret[0][0]) {
                         case 'U':
                             this.direct = 'up'
@@ -407,12 +414,12 @@ function Snake() {
                 } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheBfsNextFarDiret[1]存在，先向着cacheBfsNextFarDiret[1]走，
                     还是先让虚拟蛇去探路，假如cacheBfsNextFarDiret[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheBfsNextFarDiret[1]
                     走完后蛇头和蛇尾能连通，就按照原来的cacheBfsNextFarDiret[1]走 */
-                    console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾不能连通')
+                    //console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾不能连通')
                     if (cacheBfsNextFarDiret[1]) {//假如cacheBfsNextFarDiret[1]存在，先向着cacheBfsNextFarDiret[1]走
-                        console.log('cacheBfsNextFarDiret[1]存在')
+                        //console.log('cacheBfsNextFarDiret[1]存在')
                         this.virtualEatFood(cacheBfsNextFarDiret[1][0], true);
                         if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
-                            console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
+                            //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
                             switch (cacheBfsNextFarDiret[1][0]) {
                                 case 'U':
                                     this.direct = 'up'
@@ -428,87 +435,21 @@ function Snake() {
                                     break;
                             }
                         } else {//虚拟蛇先向着cacheBfsNextFarDiret[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
-                            console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
-                            this.moveToTail();
+                            //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
+                            this.shortestMovetoFood();
                         }
                     } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
-                        console.log('cacheMinPath[1]不存在')
-                        this.moveToTail();
+                        //console.log('cacheMinPath[1]不存在')
+                        this.shortestMovetoFood();
                     }
                 }
             } else {//最远路径不能吃到食物，就按照BFS去找蛇尾(或者走距离蛇尾最远的那个方向),如果蛇尾也找不到，就走距离蛇尾最远的那个方向(待定实现)
                 //console.log('最远路径不能吃到食物')
-                this.moveToTail();
+                this.shortestMovetoFood();
                 if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
             }
         } else {//蛇身小于170的时候走最短距离吃食物
-            this.virtualSnakeHasEat = false
-            //外挂逻辑
-            var mapArr1 = map.initMapArr.map(item => [...item])//复制数组
-            //蛇尾那一格是可以走的，不能标为1
-            for (var i = 0; i < this.body.length - 1; i++) {
-                mapArr1[this.body[i][1]][this.body[i][0]] = 1
-            }
-            //先判断按最短路径能不能吃到食物。
-            BFS(mapArr1, [this.body[0][1], this.body[0][0]], [food.y, food.x]);//map数组，起点，终点
-            if (minStep < 10000) {//按照最短路径能吃到食物
-                //console.log('最短路径能吃到食物', minPath)
-                //判断虚拟蛇按最短路径吃到食物后，蛇头和蛇尾能不能连通
-                var cacheMinPath = [...minPath]
-                this.virtualEatFood(minPath[0][0])
-                if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheMinPath
-                    //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
-                    switch (cacheMinPath[0][0]) {
-                        case 'U':
-                            this.direct = 'up'
-                            break;
-                        case 'D':
-                            this.direct = 'down'
-                            break;
-                        case 'L':
-                            this.direct = 'left'
-                            break;
-                        case 'R':
-                            this.direct = 'right'
-                            break;
-                    }
-                } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheMinPath[1]存在，先向着cacheMinPath[1]走，
-                    还是先让虚拟蛇去探路，假如cacheMinPath[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheMinPath[1]
-                    走完后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走 */
-                    //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾不能连通')
-                    if (cacheMinPath[1]) {//假如cacheMinPath[1]存在，先向着cacheMinPath[1]走
-                        //console.log('cacheMinPath[1]存在')
-                        this.virtualEatFood(cacheMinPath[1][0], true);
-                        if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
-                            //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
-                            switch (cacheMinPath[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
-                            //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
-                            this.moveToTail();
-                        }
-                    } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
-                        //console.log('cacheMinPath[1]不存在')
-                        this.moveToTail();
-                    }
-                }
-            } else {//最短路径不能吃到食物，就按照BFS去找蛇尾(或者走距离蛇尾最远的那个方向),如果蛇尾也找不到，就走距离蛇尾最远的那个方向(待定实现)
-                //console.log('最短路径不能吃到食物')
-                this.moveToTail();
-                if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
-            }
+            this.shortestMovetoFood();
         }
 
         //给蛇新的位置
@@ -573,6 +514,75 @@ function Snake() {
         this.condition();
         //this.show();  this.show()不能放在这里！放在这里的话，当游戏结束时，蛇身还会移动一步，会出现越界。
     }
+    this.shortestMovetoFood = function () {
+        this.virtualSnakeHasEat = false
+        //外挂逻辑
+        var mapArr1 = map.initMapArr.map(item => [...item])//复制数组
+        //蛇尾那一格是可以走的，不能标为1
+        for (var i = 0; i < this.body.length - 1; i++) {
+            mapArr1[this.body[i][1]][this.body[i][0]] = 1
+        }
+        //先判断按最短路径能不能吃到食物。
+        BFS(mapArr1, [this.body[0][1], this.body[0][0]], [food.y, food.x]);//map数组，起点，终点
+        if (minStep < 10000) {//按照最短路径能吃到食物
+            //console.log('最短路径能吃到食物', minPath)
+            //判断虚拟蛇按最短路径吃到食物后，蛇头和蛇尾能不能连通
+            var cacheMinPath = [...minPath]
+            this.virtualEatFood(minPath[0][0])
+            if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheMinPath
+                //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
+                switch (cacheMinPath[0][0]) {
+                    case 'U':
+                        this.direct = 'up'
+                        break;
+                    case 'D':
+                        this.direct = 'down'
+                        break;
+                    case 'L':
+                        this.direct = 'left'
+                        break;
+                    case 'R':
+                        this.direct = 'right'
+                        break;
+                }
+            } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheMinPath[1]存在，先向着cacheMinPath[1]走，
+                    还是先让虚拟蛇去探路，假如cacheMinPath[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheMinPath[1]
+                    走完后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走 */
+                //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾不能连通')
+                if (cacheMinPath[1]) {//假如cacheMinPath[1]存在，先向着cacheMinPath[1]走
+                    //console.log('cacheMinPath[1]存在')
+                    this.virtualEatFood(cacheMinPath[1][0], true);
+                    if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
+                        //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
+                        switch (cacheMinPath[1][0]) {
+                            case 'U':
+                                this.direct = 'up'
+                                break;
+                            case 'D':
+                                this.direct = 'down'
+                                break;
+                            case 'L':
+                                this.direct = 'left'
+                                break;
+                            case 'R':
+                                this.direct = 'right'
+                                break;
+                        }
+                    } else {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
+                        //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
+                        this.moveToTail();
+                    }
+                } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
+                    //console.log('cacheMinPath[1]不存在')
+                    this.moveToTail();
+                }
+            }
+        } else {//最短路径不能吃到食物，就按照BFS去找蛇尾(或者走距离蛇尾最远的那个方向),如果蛇尾也找不到，就走距离蛇尾最远的那个方向(待定实现)
+            //console.log('最短路径不能吃到食物')
+            this.moveToTail();
+            if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
+        }
+    }
     this.virtualMove = function (virtualDirect) {
         switch (virtualDirect) {
             case 'R':
@@ -636,7 +646,7 @@ function Snake() {
     this.moveToTail = function () {
         bfsMax = ''
         bfsNextFarDiret = []
-        console.log('最远追蛇尾')
+        //console.log('最远追蛇尾')
         for (var i = 0; i < 4; i++) {
             var nextX = this.body[0][1] + one[i][0];
             var nextY = this.body[0][0] + one[i][1];
@@ -656,7 +666,7 @@ function Snake() {
                 BFS(mapArr, [nextX, nextY], [this.virtualBody[virtualTailIndex][1], this.virtualBody[virtualTailIndex][0]], nextpath[i], true);
             }
         }
-        console.log('最远距离', bfsNextFarDiret)
+        //console.log('最远距离', bfsNextFarDiret)
         switch (bfsNextFarDiret[0][0]) {
             case 'U':
                 this.direct = 'up'
