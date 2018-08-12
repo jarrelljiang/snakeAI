@@ -351,7 +351,7 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 130) {//130是100%通关的
+        if (this.body.length > 115) {//115是100%通关的
             //1.首先从蛇头周围4个格子方向选出不是蛇身和越界的，让虚拟蛇走一步到那个格子
             //2.以虚拟蛇能走的所有格子为起点，找出到食物最小距离最大的格子方向，且必须按最小距离吃完食物后蛇头蛇尾能连通才有效
             //console.log('最远吃食物')
@@ -440,7 +440,7 @@ function Snake() {
                 this.shortestMovetoFood();
                 if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
             }
-        } else {//蛇身小于170的时候走最短距离吃食物
+        } else {//蛇身小于115的时候走最短距离吃食物
             this.shortestMovetoFood();
         }
 
