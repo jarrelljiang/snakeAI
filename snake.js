@@ -90,7 +90,6 @@ function BFS(map, startArr, endArr, farDiret, isMovetoTail, isMovetoFood) {
             }
         }
     }
-    if (!isMovetoFood && isMovetoTail) console.log('每个方向的minPath' + '~' + farDiret, minPath)
     //console.log(minPath, minStep == 10000 ? '没有通路' : minStep);//循环结束输出最短步数及路径
     if (isMovetoTail && minPath[0] && minPath[0].length >= bfsMax.length) {
         //发现长度相等的路线时，直接push进去，发现长度更长的路线路线时，把整个数组清空，再把这条长路线push进去
@@ -346,13 +345,42 @@ function Snake() {
     }
     //控制蛇移动
     this.move = function () {
-        /* if (Math.random() <= 0.9) {
+        /* if (this.body.length < 100) {
+            if (Math.random() < 0.5) {
+                one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
+                nextpath = ["R", "L", "U", "D"];
+            } else {
+                one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
+                nextpath = ["U", "D", "R", "L"];
+            }
+        } else {
             one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
             nextpath = ["R", "L", "U", "D"];
-        } else {
+        } */
+        if (this.body.length < 100) {
+            if (Math.random() < 0.7) {
+                one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
+                nextpath = ["R", "L", "U", "D"];
+            } else {
+                one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
+                nextpath = ["U", "D", "R", "L"];
+            }
+        } else if (this.body.length < 120) {
             one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
             nextpath = ["U", "D", "R", "L"];
-        } */
+        }
+        else if (this.body.length < 140) {
+            one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
+            nextpath = ["R", "L", "U", "D"];
+        }
+        else if (this.body.length < 160) {
+            one = [[-1, 0], [1, 0], [0, 1], [0, -1]];
+            nextpath = ["U", "D", "R", "L"];
+        }
+        else if (this.body.length < 200) {
+            one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
+            nextpath = ["R", "L", "U", "D"];
+        }
         /* ！！！！！！！！！！！在每次移动之前一定要设置this.virtualSnakeHasEat为false
           因为不仅仅下面找食物会改变this.virtualSnakeHasEat的值，而且后面movetoTail也会
           改变this.virtualSnakeHasEat的值，下个回合再走到这里时，一定要把this.virtualSnakeHasEat
@@ -443,7 +471,7 @@ function Snake() {
                         this.shortestMovetoFood();
                     }
                 }
-            } else {//最远路径不能吃到食物，就按照BFS去找蛇尾(或者走距离蛇尾最远的那个方向),如果蛇尾也找不到，就走距离蛇尾最远的那个方向(待定实现)
+            } else {//最远路径不能吃到食物，就按照最短路径去吃食物
                 //console.log('最远路径不能吃到食物')
                 this.shortestMovetoFood();
                 if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
@@ -572,7 +600,7 @@ function Snake() {
                         //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
                         this.moveToTail();
                     }
-                } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
+                } else {//cacheMinPath[1]不存在，直接按照最远路径去找蛇尾吧
                     //console.log('cacheMinPath[1]不存在')
                     this.moveToTail();
                 }
@@ -737,37 +765,49 @@ function Snake() {
         // }
     }
     this.virtualEatFood = function (nextDiret, two) {
-        this.virtualBody = this.body.map(item => [...item])
-        /* for (var i of minPath) {
-                this.virtualMove(i)
-            } */
-        this.virtualMove(nextDiret)
-        while (!this.virtualSnakeHasEat) {
+        var is1ok = false
+        function goDiret(index) {
+            this.virtualBody = this.body.map(item => [...item])
+            /* for (var i of minPath) {
+                    this.virtualMove(i)
+                } */
+            this.virtualMove(nextDiret)
+            while (!this.virtualSnakeHasEat) {
+                var mapArr = map.initMapArr.map(item => [...item])
+                for (var i = 0; i < this.virtualBody.length - 1; i++) {
+                    mapArr[this.virtualBody[i][1]][this.virtualBody[i][0]] = 1
+                }
+                BFS(mapArr, [this.virtualBody[0][1], this.virtualBody[0][0]], [food.y, food.x])
+                /* 
+                    因为虚拟蛇每走一步都是重新搜索路线的，此virtualEatFood方法中只是虚拟蛇走第一步时用的cacheDiret[1][0],
+                    也就是minPath[1][0]，但是下面一行走第二步时还是用的minPath[0][0]，然后等虚拟蛇走完吃到食物有可能会报告
+                    这条路也不通。
+                 */
+                //this.virtualMove(minPath[0][0])//！！！问题在这
+                if (minPath[1]) {//可以考虑把这个two删掉。two传false的时候也应该要走minPath[1]
+                    this.virtualMove(minPath[index][0])
+                } else {
+                    this.virtualMove(minPath[0][0])
+                }
+            }
+            this.virtualSnakeHasEat = false;
             var mapArr = map.initMapArr.map(item => [...item])
+            //蛇尾那一格是可以走的，不能标为1
             for (var i = 0; i < this.virtualBody.length - 1; i++) {
                 mapArr[this.virtualBody[i][1]][this.virtualBody[i][0]] = 1
             }
-            BFS(mapArr, [this.virtualBody[0][1], this.virtualBody[0][0]], [food.y, food.x])
-            /* 
-                因为虚拟蛇每走一步都是重新搜索路线的，此virtualEatFood方法中只是虚拟蛇走第一步时用的cacheDiret[1][0],
-                也就是minPath[1][0]，但是下面一行走第二步时还是用的minPath[0][0]，然后等虚拟蛇走完吃到食物有可能会报告
-                这条路也不通。
-             */
-            //this.virtualMove(minPath[0][0])//！！！问题在这
-            if (minPath[1] && two) {//可以考虑把这个two删掉。two传false的时候也应该要走minPath[1]
-                this.virtualMove(minPath[1][0])
-            } else {
-                this.virtualMove(minPath[0][0])
+            var virtualTailIndex = this.virtualBody.length - 1//注意这里不能用tailIndex，因为虚拟蛇吃完食物后是增加了1粒的
+            BFS(mapArr, [this.virtualBody[0][1], this.virtualBody[0][0]], [this.virtualBody[virtualTailIndex][1], this.virtualBody[virtualTailIndex][0]]);
+            if (minStep < 10000) {
+                is1ok = true;
             }
         }
-        this.virtualSnakeHasEat = false;
-        var mapArr = map.initMapArr.map(item => [...item])
-        //蛇尾那一格是可以走的，不能标为1
-        for (var i = 0; i < this.virtualBody.length - 1; i++) {
-            mapArr[this.virtualBody[i][1]][this.virtualBody[i][0]] = 1
+        //虚拟蛇优先走第2条最短路，如果第二条最短路走完蛇头蛇尾能连通，就不需要走第1条最短路了
+        goDiret.call(this, 1);
+        if (!is1ok) {
+            goDiret.call(this, 0);
         }
-        var virtualTailIndex = this.virtualBody.length - 1//注意这里不能用tailIndex，因为虚拟蛇吃完食物后是增加了1粒的
-        BFS(mapArr, [this.virtualBody[0][1], this.virtualBody[0][0]], [this.virtualBody[virtualTailIndex][1], this.virtualBody[virtualTailIndex][0]]);
+
     }
     //定时器，开始游戏时，调用
     this.speed = function () {
