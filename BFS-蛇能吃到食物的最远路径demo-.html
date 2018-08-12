@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+<script type="text/javascript">
+/*
+    这个demo给出了地图的坐标和蛇身的坐标和食物的坐标，能够得到蛇能够吃到食物的最远路线(只有1步，也就是下个方向，可能有2个方向)
+    得到最远路线(1步，也就是下个方向)后，用虚拟蛇走一步，判断虚拟蛇在这个位置走最短路线吃到食物后蛇头和蛇尾能不能连通。
+*/
+/*var map = [
+    [1, 0, 0],
+    [1, 0, 0],
+    [0, 0, 0]
+]*/
+var one = [[0, 1], [0, -1], [-1, 0], [1, 0]];//右左上下移动坐标的变化
+//这个顺序决定有多条最短路线时走哪条
+var nextpath = ["R", "L", "U", "D"];//右左上下移动的表示
+var minStep = 10000//最小步数
+var minPath = []
+//点类记录当前坐标，步数，路径,step表示从出发到当前点经过几步,path表示从出发到当前点经过路径
+function Point(x, y, step, path) {
+    this.x = x;
+    this.y = y;
+    this.step = step;
+    this.path = path;
+}
+//判断点是否出界或被访问过
+function check(map, cunrrentPoint) {
+    var n = map.length - 1;
+    var m = map[0].length - 1;
+    if (cunrrentPoint.x < 0 || cunrrentPoint.x > n || cunrrentPoint.y < 0 || cunrrentPoint.y > m || map[cunrrentPoint.x][cunrrentPoint.y] == 1)
+        return false;
+    return true;
+}
+//搜索路径
+function BFS(map, startArr, endArr,farDiret) {
+    var list = [];
+    list.push(new Point(startArr[0], startArr[1],0, ''))//向队列中加入第一个点
+    minStep = 10000//最小步数
+    minPath = [];//最短路径//为什么最多只会存在2个值？因为有了两个值之后终点就被1给环绕封死了
+    while (list.length != 0) {
+        var cunrrentPoint = list[0];//当队列中有点时，取出点比较是否为终点
+        list.shift();//删除该点
+        if (cunrrentPoint.x == endArr[0] && cunrrentPoint.y == endArr[1]) {
+            if (minStep > cunrrentPoint.step) {
+                minStep = cunrrentPoint.step;
+                minPath.push(cunrrentPoint.path);
+            } else if (minStep == cunrrentPoint.step) {
+                minPath.push(cunrrentPoint.path);
+            }
+            continue;
+
+        }
+        //如果不是终点，依次尝试访问上下左右，并加入队列继续循环
+        for (var i = 0; i < 4; i++) {
+            var x = cunrrentPoint.x + one[i][0];
+            var y = cunrrentPoint.y + one[i][1];
+            var step = cunrrentPoint.step + 1;
+            var path = cunrrentPoint.path + nextpath[i];
+            var point = new Point(x, y, step, path);
+            if (check(map, point)) {
+                list.push(point);
+                if(x!=endArr[0]||y!=endArr[1]){//如果是终点就不设为1
+                    map[x][y]=1
+                }
+            }
+        }
+    }
+    //console.log(minPath, minStep==10000?'没有通路':minStep);//循环结束输出最短步数及路径
+    console.log(minPath,farDiret)
+    if(minPath[0]&&minPath[0].length>=bfsMax.length){
+        if(minPath[0].length>bfsMax.length&&bfsNextFarDiret.length>0){          
+            bfsNextFarDiret=[]
+        }
+        bfsMax=minPath[0]
+        bfsNextFarDiret.push(farDiret)
+    }
+    
+    return;
+}
+
+//BFS(map, [1,1], [0,2]);//map数组，起点，终点
+var bfsMax=''
+var bfsNextFarDiret=[]
+var initmaparr = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0]
+]
+var body=[[1,0],[0,0],[0,1],[0,2],[1,2],[2,2],[3,2],[3,1],[2,1],[2,0]]
+var virtualBody=[]
+var food={x:3,y:0}
+var virtualMove = function (virtualDirect) {
+        switch (virtualDirect) {
+            case 'R':
+                if (!(virtualBody[0][0] == food.x - 1 && virtualBody[0][1] == food.y)) {
+                    var length = virtualBody.length - 1;
+                    for (var i = length; i > 0; i--) {
+                        virtualBody[i][0] = virtualBody[i - 1][0];
+                        virtualBody[i][1] = virtualBody[i - 1][1];
+                    }
+                    virtualBody[0][0] = virtualBody[0][0] + 1;
+                } else {
+                    virtualBody.unshift([food.x, food.y]);
+                }
+                break;
+            case 'L':
+                if (!(virtualBody[0][0] == food.x + 1 && virtualBody[0][1] == food.y)) {
+                    var length = virtualBody.length - 1;
+                    for (var i = length; i > 0; i--) {
+                        virtualBody[i][0] = virtualBody[i - 1][0];
+                        virtualBody[i][1] = virtualBody[i - 1][1];
+                    }
+                    virtualBody[0][0] = virtualBody[0][0] - 1;
+                } else {
+                    virtualBody.unshift([food.x, food.y]);
+                }
+                break;
+            case 'U':
+                if (!(virtualBody[0][0] == food.x && virtualBody[0][1] == food.y + 1)) {
+                    var length = virtualBody.length - 1;
+                    for (var i = length; i > 0; i--) {
+                        virtualBody[i][0] = virtualBody[i - 1][0];
+                        virtualBody[i][1] = virtualBody[i - 1][1];
+                    }
+                    virtualBody[0][1] = virtualBody[0][1] - 1;
+                } else {
+                    virtualBody.unshift([food.x, food.y]);
+                }
+                break;
+            case 'D':
+                if (!(virtualBody[0][0] == food.x && virtualBody[0][1] == food.y - 1)) {
+                    var length = virtualBody.length - 1;
+                    for (var i = length; i > 0; i--) {
+                        virtualBody[i][0] = virtualBody[i - 1][0];
+                        virtualBody[i][1] = virtualBody[i - 1][1];
+                    }
+                    virtualBody[0][1] = virtualBody[0][1] + 1;
+                } else {
+                    virtualBody.unshift([food.x, food.y]);
+                }
+                break;
+        }
+    }
+for (var i = 0; i < 4; i++) {
+    var nextX = body[0][1] + one[i][0];
+    var nextY = body[0][0] + one[i][1];
+    var mapArr = initmaparr.map(item => [...item])
+    for (var m = 0; m < body.length - 1; m++) {
+        mapArr[body[m][1]][body[m][0]] = 1
+    }
+    if(check(mapArr,{x:nextX,y:nextY})){
+        virtualBody = body.map(item => [...item])
+        virtualMove(nextpath[i])
+        var mapArr = initmaparr.map(item => [...item])
+        for (var j = 0; j < virtualBody.length - 1; j++) {
+            mapArr[virtualBody[j][1]][virtualBody[j][0]] = 1
+        }
+        var virtualTailIndex = virtualBody.length - 1
+        BFS(mapArr, [nextX, nextY], [this.virtualBody[virtualTailIndex][1], this.virtualBody[virtualTailIndex][0]],nextpath[i])
+    }
+}
+console.log(bfsNextFarDiret)
+</script>
+</body>
+</html>
