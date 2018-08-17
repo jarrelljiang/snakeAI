@@ -15,6 +15,7 @@ body {
     margin: 0 auto 25px;
     position: relative;
     overflow: hidden;
+    margin-left: 47%;
 }
 
 #scoreBox {
@@ -22,6 +23,50 @@ body {
     position: absolute;
     left: 62px;
     transition: 1.2s;
+}
+
+#script {
+    cursor: pointer;
+    width: 110px;
+    height: 36px;
+    font-size: 20px;
+    background: rgb(247, 243, 190);
+    color: rgb(200, 2, 1);
+    border-radius: 6px;
+    position: relative;
+    top: -6px;
+    border: none;
+    box-shadow: 0 0 10px 0 rgb(200, 2, 1);
+    transition: 1s;
+    outline: none;
+    overflow: hidden;
+}
+
+.light:before {
+    content: "";
+    position: absolute;
+    left: -665px;
+    top: -460px;
+    width: 200px;
+    height: 15px;
+    background-color: rgba(255, 255, 255, .5);
+    transform: rotate(-45deg);
+    animation: searchLights 2s ease-in 2s infinite;
+}
+
+@keyframes searchLights {
+    0% {
+        left: -100px;
+        top: 0;
+    }
+    50% {
+        left: 120px;
+        top: 100px;
+    }
+    100% {
+        left: 120px;
+        top: 100px;
+    }
 }
 
 #h2 strong {
