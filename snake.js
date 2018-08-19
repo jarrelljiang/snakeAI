@@ -257,7 +257,7 @@ function Food() {
         this._food.style.left = this.x * this.width;
         this._food.style.top = this.y * this.height;
         map._map.appendChild(this._food);
-        console.log(this.x, this.y)
+        //console.log(this.x, this.y)
         /* arrx = [];//蛇身所有点的x坐标
         arry = [];//蛇身所有点的y坐标
         for (var i = 0; i < snake.body.length; i++) {
@@ -431,113 +431,25 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 100) {//100是100%通关的
-            if (this.body.length > 170) {
+        if (this.body.length > 130) {
+            if (this.body.length > 168) {
                 this.dfsLongestToTail()
             } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
-                this.farthestMovetoFood()//this.shortestMovetoFood()
+                this.shortestMovetoFood()//this.farthestMovetoFood()
             } else {
                 this.moveToTail()
             }
-            // //1.首先从蛇头周围4个格子方向选出不是蛇身和越界的，让虚拟蛇走一步到那个格子
-            // //2.以虚拟蛇能走的所有格子为起点，找出到食物最小距离最大的格子方向，且必须按最小距离吃完食物后蛇头蛇尾能连通才有效
-            // //console.log('最远吃食物')
-            // bfsMax = ''
-            // bfsNextFarDiret = []
-            // for (var i = 0; i < 4; i++) {
-            //     var nextX = this.body[0][1] + one[i][0];
-            //     var nextY = this.body[0][0] + one[i][1];
-            //     var mapArr = map.initMapArr.map(item => [...item])
-            //     for (var m = 0; m < this.body.length - 1; m++) {
-            //         mapArr[this.body[m][1]][this.body[m][0]] = 1
-            //     }
-            //     if (check(mapArr, { x: nextX, y: nextY })) {
-            //         this.virtualBody = this.body.map(item => [...item])
-            //         /* !!!!!!!!!!!!!!!!!!!!!!!!!
-            //         这里蛇头周围4个方向中假如食物刚好在其中的1格，虚拟蛇吃到食物后需要把this.virtualSnakeHasEat设为false，
-            //         可以就在BFS的那个判断里面设置，要不然循环到下一个方向时，virtualSnakeHasEat还为true，
-            //         就会把下一个方向直接push进去了。
-            //          */
-            //         this.virtualMove(nextpath[i])
-            //         var mapArr = map.initMapArr.map(item => [...item])
-            //         //蛇尾那一格是可以走的，不能标为1
-            //         for (var j = 0; j < this.virtualBody.length - 1; j++) {//内外层循环不能都用变量i，要用i、j。被坑了次
-            //             mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
-            //         }
-            //         BFS(mapArr, [nextX, nextY], [food.y, food.x], nextpath[i], true, true);
-            //     }
-            // }//到这里，就拿到了距食物最远的方向，是一个数组，里面有可能存在2个值。然后分别判断虚拟蛇沿这2个方向吃完后蛇头蛇尾能不能连通
-            // this.virtualSnakeHasEat = false
-            // if (bfsNextFarDiret.length > 0) {//按照最远路径能吃到食物
-            //     //console.log('最远路径能吃到食物', bfsNextFarDiret)
-            //     //console.log(mapArr, [this.body[0][1], this.body[0][0]], [food.y, food.x])
-            //     //判断虚拟蛇按最远路径吃到食物后，蛇头和蛇尾能不能连通
-            //     var cacheBfsNextFarDiret = [...bfsNextFarDiret]
-            //     this.virtualEatFood(bfsNextFarDiret[0][0], false)
-            //     if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheBfsNextFarDiret
-            //         //console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾能连通')
-            //         switch (cacheBfsNextFarDiret[0][0]) {
-            //             case 'U':
-            //                 this.direct = 'up'
-            //                 break;
-            //             case 'D':
-            //                 this.direct = 'down'
-            //                 break;
-            //             case 'L':
-            //                 this.direct = 'left'
-            //                 break;
-            //             case 'R':
-            //                 this.direct = 'right'
-            //                 break;
-            //         }
-            //     } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheBfsNextFarDiret[1]存在，先向着cacheBfsNextFarDiret[1]走，
-            //         还是先让虚拟蛇去探路，假如cacheBfsNextFarDiret[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheBfsNextFarDiret[1]
-            //         走完后蛇头和蛇尾能连通，就按照原来的cacheBfsNextFarDiret[1]走 */
-            //         //console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾不能连通')
-            //         if (cacheBfsNextFarDiret[1]) {//假如cacheBfsNextFarDiret[1]存在，先向着cacheBfsNextFarDiret[1]走
-            //             //console.log('cacheBfsNextFarDiret[1]存在')
-            //             this.virtualEatFood(cacheBfsNextFarDiret[1][0], true);
-            //             if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
-            //                 //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
-            //                 switch (cacheBfsNextFarDiret[1][0]) {
-            //                     case 'U':
-            //                         this.direct = 'up'
-            //                         break;
-            //                     case 'D':
-            //                         this.direct = 'down'
-            //                         break;
-            //                     case 'L':
-            //                         this.direct = 'left'
-            //                         break;
-            //                     case 'R':
-            //                         this.direct = 'right'
-            //                         break;
-            //                 }
-            //             } else {//虚拟蛇先向着cacheBfsNextFarDiret[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
-            //                 //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
-            //                 this.shortestMovetoFood();
-            //             }
-            //         } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
-            //             //console.log('cacheMinPath[1]不存在')
-            //             this.shortestMovetoFood();
-            //         }
-            //     }
-            // } else {//最远路径不能吃到食物，就按照最短路径去吃食物
-            //     //console.log('最远路径不能吃到食物')
-            //     this.shortestMovetoFood();
-            //     if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
-            // }
-        } else {//蛇身小于110的时候走最短距离吃食物
+        } else {//蛇身小于130的时候走最短距离吃食物
             if (Math.random() < 0.1) {//概率小于0.1，走最大距离，大于0.1走最小距离吃
                 this.farthestMovetoFood()
             } else {
                 this.shortestMovetoFood();
             }
         }
-
+        //!!!console.log('最终方向', this.direct)
         //给蛇新的位置
         switch (this.direct) {
-            case 'right':
+            case 'R':
                 if (!(this.body[0][0] == food.x - 1 && this.body[0][1] == food.y)) {//即将要吃食物，就不改变蛇的坐标，同时把新食物的位置当做蛇头
                     //蛇移动重绘(是根据蛇在这瞬间的方向来重绘的)
                     var length = this.body.length - 1;
@@ -551,7 +463,7 @@ function Snake() {
                     this.eatFoodHandle()
                 }
                 break;
-            case 'left':
+            case 'L':
                 if (!(this.body[0][0] == food.x + 1 && this.body[0][1] == food.y)) {//即将要吃食物，就不改变蛇的坐标，同时把新食物的位置当做蛇头
                     //蛇移动重绘(是根据蛇在这瞬间的方向来重绘的)
                     var length = this.body.length - 1;
@@ -565,7 +477,7 @@ function Snake() {
                     this.eatFoodHandle()
                 }
                 break;
-            case 'up':
+            case 'U':
                 if (!(this.body[0][0] == food.x && this.body[0][1] == food.y + 1)) {//即将要吃食物，就不改变蛇的坐标，同时把新食物的位置当做蛇头
                     //蛇移动重绘(是根据蛇在这瞬间的方向来重绘的)
                     var length = this.body.length - 1;
@@ -579,7 +491,7 @@ function Snake() {
                     this.eatFoodHandle()
                 }
                 break;
-            case 'down':
+            case 'D':
                 if (!(this.body[0][0] == food.x && this.body[0][1] == food.y - 1)) {//即将要吃食物，就不改变蛇的坐标，同时把新食物的位置当做蛇头
                     //蛇移动重绘(是根据蛇在这瞬间的方向来重绘的)
                     var length = this.body.length - 1;
@@ -595,7 +507,6 @@ function Snake() {
                 break;
         }
         this.condition();
-        //this.show();  this.show()不能放在这里！放在这里的话，当游戏结束时，蛇身还会移动一步，会出现越界。
     }
     this.shortestMovetoFood = function (isBFS) {
         this.virtualSnakeHasEat = false
@@ -614,19 +525,15 @@ function Snake() {
             this.virtualEatFood(minPath[0][0])
             if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheMinPath
                 //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
-                switch (cacheMinPath[0][0]) {
-                    case 'U':
-                        this.direct = 'up'
-                        break;
-                    case 'D':
-                        this.direct = 'down'
-                        break;
-                    case 'L':
-                        this.direct = 'left'
-                        break;
-                    case 'R':
-                        this.direct = 'right'
-                        break;
+                if (this.movetoFoodWillLonely(cacheMinPath)) {
+                    if (isBFS) {
+                        this.dfsLongestToTail()
+                    } else {
+                        this.moveToTail();
+                    }
+                } else {
+                    //!!!console.log('虚拟蛇走最短路径' + cacheMinPath[0] + '吃完食物后蛇头和蛇尾能连通')
+                    this.direct = cacheMinPath[0][0]
                 }
             } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheMinPath[1]存在，先向着cacheMinPath[1]走，
                     还是先让虚拟蛇去探路，假如cacheMinPath[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheMinPath[1]
@@ -636,21 +543,8 @@ function Snake() {
                     //console.log('cacheMinPath[1]存在')
                     this.virtualEatFood(cacheMinPath[1][0], true);
                     if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
-                        //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
-                        switch (cacheMinPath[1][0]) {
-                            case 'U':
-                                this.direct = 'up'
-                                break;
-                            case 'D':
-                                this.direct = 'down'
-                                break;
-                            case 'L':
-                                this.direct = 'left'
-                                break;
-                            case 'R':
-                                this.direct = 'right'
-                                break;
-                        }
+                        //!!!console.log('虚拟蛇走最短路径' + cacheMinPath[1] + '吃完食物后蛇头和蛇尾能连通')
+                        this.direct = cacheMinPath[1][0]
                     } else {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
                         //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
                         if (isBFS) {
@@ -668,7 +562,7 @@ function Snake() {
                     }
                 }
             }
-        } else {//最短路径不能吃到食物，就按照BFS去找蛇尾(或者走距离蛇尾最远的那个方向),如果蛇尾也找不到，就走距离蛇尾最远的那个方向(待定实现)
+        } else {//最短路径不能吃到食物，就按照最远路径去找蛇尾
             //console.log('最短路径不能吃到食物')
             if (isBFS) {
                 this.dfsLongestToTail()
@@ -709,27 +603,14 @@ function Snake() {
         }//到这里，就拿到了距食物最远的方向，是一个数组，里面有可能存在2个值。然后分别判断虚拟蛇沿这2个方向吃完后蛇头蛇尾能不能连通
         this.virtualSnakeHasEat = false
         if (bfsNextFarDiret.length > 0) {//按照最远路径能吃到食物
+            bfsNextFarDiret.sort((a, b) => b.length - a.length)
             //console.log('最远路径能吃到食物', bfsNextFarDiret)
-            //console.log(mapArr, [this.body[0][1], this.body[0][0]], [food.y, food.x])
             //判断虚拟蛇按最远路径吃到食物后，蛇头和蛇尾能不能连通
             var cacheBfsNextFarDiret = [...bfsNextFarDiret]
             this.virtualEatFood(bfsNextFarDiret[0][0], false)
-            if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheBfsNextFarDiret
-                //console.log('虚拟蛇走cacheBfsNextFarDiret[0]吃完食物后蛇头和蛇尾能连通')
-                switch (cacheBfsNextFarDiret[0][0]) {
-                    case 'U':
-                        this.direct = 'up'
-                        break;
-                    case 'D':
-                        this.direct = 'down'
-                        break;
-                    case 'L':
-                        this.direct = 'left'
-                        break;
-                    case 'R':
-                        this.direct = 'right'
-                        break;
-                }
+            if (minStep < 10000 /* && !this.movetoFoodWillLonely(cacheBfsNextFarDiret, true) */) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheBfsNextFarDiret
+                //!!!console.log('虚拟蛇走最远路径' + cacheBfsNextFarDiret[0] + '吃完食物后蛇头和蛇尾能连通')
+                this.direct = cacheBfsNextFarDiret[0][0]
             } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheBfsNextFarDiret[1]存在，先向着cacheBfsNextFarDiret[1]走，
                     还是先让虚拟蛇去探路，假如cacheBfsNextFarDiret[1]走完后蛇头和蛇尾还是不能连通，就按照BFS去找蛇尾，假如cacheBfsNextFarDiret[1]
                     走完后蛇头和蛇尾能连通，就按照原来的cacheBfsNextFarDiret[1]走 */
@@ -738,33 +619,20 @@ function Snake() {
                     //console.log('cacheBfsNextFarDiret[1]存在')
                     this.virtualEatFood(cacheBfsNextFarDiret[1][0], true);
                     if (minStep < 10000) {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾能连通，就按照原来的cacheMinPath[1]走
-                        //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾能连通')
-                        switch (cacheBfsNextFarDiret[1][0]) {
-                            case 'U':
-                                this.direct = 'up'
-                                break;
-                            case 'D':
-                                this.direct = 'down'
-                                break;
-                            case 'L':
-                                this.direct = 'left'
-                                break;
-                            case 'R':
-                                this.direct = 'right'
-                                break;
-                        }
+                        //!!!console.log('虚拟蛇走最远路径' + cacheBfsNextFarDiret[1] + '吃完食物后蛇头和蛇尾能连通')
+                        this.direct = cacheBfsNextFarDiret[1][0]
                     } else {//虚拟蛇先向着cacheBfsNextFarDiret[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
                         //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
-                        this.shortestMovetoFood();
+                        this.moveToTail()//this.shortestMovetoFood();
                     }
                 } else {//cacheMinPath[1]不存在，直接按照BFS去找蛇尾吧
                     //console.log('cacheMinPath[1]不存在')
-                    this.shortestMovetoFood();
+                    this.moveToTail()//this.shortestMovetoFood();
                 }
             }
         } else {//最远路径不能吃到食物，就按照最短路径去吃食物
             //console.log('最远路径不能吃到食物')
-            this.shortestMovetoFood();
+            this.moveToTail()//this.shortestMovetoFood();
             if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
         }
     }
@@ -851,469 +719,48 @@ function Snake() {
                 BFS(mapArr, [nextX, nextY], [this.virtualBody[virtualTailIndex][1], this.virtualBody[virtualTailIndex][0]], nextpath[i], true);
             }
         }
-
-
         bfsNextFarDiret.sort((a, b) => b.length - a.length)
-        console.log('最远追蛇尾', bfsNextFarDiret)
+        //!!!console.log('最远追蛇尾', bfsNextFarDiret)
         this.virtualBody = this.body.map(item => [...item])
         this.virtualMove(bfsNextFarDiret[0][0])
         var mapArr = map.initMapArr.map(item => [...item])
         for (var j = 0; j < this.virtualBody.length; j++) {
             mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
         }
+        //判断各个方向会不会产生空格
         if (bfsNextFarDiret.length > 1) {
-            switch (bfsNextFarDiret[0][0]) {
-                case 'U':
-                    if (this.virtualBody[1][0] < this.virtualBody[2][0]) {
-                        var currentPoint = [this.virtualBody[0][0] + 1, this.virtualBody[0][1]]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'up'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向上走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-
-                    } else if (this.virtualBody[1][0] > this.virtualBody[2][0]) {
-                        var currentPoint = [this.virtualBody[0][0] - 1, this.virtualBody[0][1]]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'up'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向上走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
+            var breakOuter = false
+            for (var i = 0; i < 4; i++) {
+                breakOuter = false;
+                var currentPoint = [this.virtualBody[0][0] + one[i][0], this.virtualBody[0][1] + one[i][1]]
+                if (check(mapArr, { x: currentPoint[1], y: currentPoint[0] })) {
+                    for (var n = 0; n < 4; n++) {
+                        var nextX = currentPoint[1] + one[n][0];
+                        var nextY = currentPoint[0] + one[n][1];
+                        if (checkLonely(mapArr, { x: nextX, y: nextY })) {
+                            breakOuter = true
+                            break;
                         }
                     }
-                    break;
-                case 'D':
-                    if (this.virtualBody[1][0] < this.virtualBody[2][0]) {
-                        var currentPoint = [this.virtualBody[0][0] + 1, this.virtualBody[0][1]]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'down'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向下走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-
-                    } else if (this.virtualBody[1][0] > this.virtualBody[2][0]) {
-                        var currentPoint = [this.virtualBody[0][0] - 1, this.virtualBody[0][1]]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'down'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向下走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-                    }
-                    break;
-                case 'L':
-                    if (this.virtualBody[1][1] < this.virtualBody[2][1]) {
-                        var currentPoint = [this.virtualBody[0][0], this.virtualBody[0][1] + 1]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'left'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向左走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-
-                    } else if (this.virtualBody[1][1] > this.virtualBody[2][1]) {
-                        var currentPoint = [this.virtualBody[0][0], this.virtualBody[0][1] - 1]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'left'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向左走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-                    }
-                    break;
-                case 'R':
-                    if (this.virtualBody[1][1] < this.virtualBody[2][1]) {
-                        var currentPoint = [this.virtualBody[0][0], this.virtualBody[0][1] + 1]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'right'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向右走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-
-                    } else if (this.virtualBody[1][1] > this.virtualBody[2][1]) {
-                        var currentPoint = [this.virtualBody[0][0], this.virtualBody[0][1] - 1]
-                        if (mapArr[currentPoint[1]][currentPoint[0]] == 0) {
-                            for (var i = 0; i < 4; i++) {
-                                var nextX = currentPoint[1] + one[i][0];
-                                var nextY = currentPoint[0] + one[i][1];
-                                if (checkLonely(mapArr, { x: nextX, y: nextY })) {
-                                    this.direct = 'right'
-                                    console.log('最终方向', this.direct)
-                                    return;
-                                }
-                            }
-                            console.log('---向右走会产生空格---')
-                            switch (bfsNextFarDiret[1][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        } else {
-                            switch (bfsNextFarDiret[0][0]) {
-                                case 'U':
-                                    this.direct = 'up'
-                                    break;
-                                case 'D':
-                                    this.direct = 'down'
-                                    break;
-                                case 'L':
-                                    this.direct = 'left'
-                                    break;
-                                case 'R':
-                                    this.direct = 'right'
-                                    break;
-                            }
-                        }
-                    }
-                    break;
+                    if (breakOuter) continue;
+                    //!!!console.log('追蛇尾', bfsNextFarDiret[0][0], '会产生空格')
+                    this.direct = bfsNextFarDiret[1][0]
+                    return
+                }
             }
+            if (Math.abs(this.body[0][0] - food.x) == 1 && Math.abs(this.body[0][1] - food.y) == 1) {
+                if (this.movetoFoodWillLonely(bfsNextFarDiret, true)) {
+                    this.direct = bfsNextFarDiret[1][0]
+                } else {
+                    this.direct = bfsNextFarDiret[0][0]
+                }
+            } else {
+                this.direct = bfsNextFarDiret[0][0]
+            }
+            return
         } else {
-            switch (bfsNextFarDiret[0][0]) {
-                case 'U':
-                    this.direct = 'up'
-                    break;
-                case 'D':
-                    this.direct = 'down'
-                    break;
-                case 'L':
-                    this.direct = 'left'
-                    break;
-                case 'R':
-                    this.direct = 'right'
-                    break;
-            }
+            this.direct = bfsNextFarDiret[0][0]
         }
-
-        console.log('最终方向', this.direct)
-
-        /* switch (bfsNextFarDiret[0][0]) {
-            case 'U':
-                this.direct = 'up'
-                break;
-            case 'D':
-                this.direct = 'down'
-                break;
-            case 'L':
-                this.direct = 'left'
-                break;
-            case 'R':
-                this.direct = 'right'
-                break;
-        } */
-
-        // var mapArr = map.initMapArr.map(item => [...item])//复制数组
-        // //蛇尾那一格是可以走的，不能标为1
-        // for (var i = 0; i < this.body.length - 1; i++) {
-        //     mapArr[this.body[i][1]][this.body[i][0]] = 1
-        // }
-        // //if (this.body.length > 130) {
-        // //！！！注意每次执行DFS前都要把total和max置为0！！！因为这两变量是全局变量，前一次执行DFS后会污染这两个变量
-        // total = 0
-        // max = '';
-        // /* 
-        // 我设置的total最大只能为十万，也就是说在十万次执行后还没找到max，那max就是空，实际上哪怕终点就在起点旁边，
-        // DFS还是有可能在十万次内找不到max。DFS按照我设置的策略会优先向右边找，如果终点在起点左边，就有可能在十万次内找不到，
-        // 这时候应该走BFS
-        //  */
-        // DFS(mapArr, [this.body[0][1], this.body[0][0]], [this.body[tailIndex][1], this.body[tailIndex][0]], '');
-        // if (max) {
-        //     //console.log('最长路径追蛇尾-' + max)
-        //     switch (max[0]) {
-        //         case 'U':
-        //             this.direct = 'up'
-        //             break;
-        //         case 'D':
-        //             this.direct = 'down'
-        //             break;
-        //         case 'L':
-        //             this.direct = 'left'
-        //             break;
-        //         case 'R':
-        //             this.direct = 'right'
-        //             break;
-        //     }
-        // } else {
-        //     var mapArr = map.initMapArr.map(item => [...item])//复制数组
-        //     //蛇尾那一格是可以走的，不能标为1
-        //     for (var i = 0; i < this.body.length - 1; i++) {
-        //         mapArr[this.body[i][1]][this.body[i][0]] = 1
-        //     }
-        //     BFS(mapArr, [this.body[0][1], this.body[0][0]], [this.body[tailIndex][1], this.body[tailIndex][0]]);
-        //     switch (minPath[0][0]) {
-        //         case 'U':
-        //             this.direct = 'up'
-        //             break;
-        //         case 'D':
-        //             this.direct = 'down'
-        //             break;
-        //         case 'L':
-        //             this.direct = 'left'
-        //             break;
-        //         case 'R':
-        //             this.direct = 'right'
-        //             break;
-        //     }
-        // }
-    }
-    this.calcLonely = function (maxArr) {
-
     }
     this.dfsLongestToTail = function () {
         var mapArr = map.initMapArr.map(item => [...item])//复制数组
@@ -1332,20 +779,18 @@ function Snake() {
          */
         var tailIndex = this.body.length - 1;
         DFS(mapArr, [this.body[0][1], this.body[0][0]], [this.body[tailIndex][1], this.body[tailIndex][0]], '');
-        console.log('dfs最长路径追蛇尾-', max)
-        switch (max[0][0]) {
-            case 'U':
-                this.direct = 'up'
-                break;
-            case 'D':
-                this.direct = 'down'
-                break;
-            case 'L':
-                this.direct = 'left'
-                break;
-            case 'R':
-                this.direct = 'right'
-                break;
+        //!!!console.log('dfs最长路径追蛇尾-', max)
+        if (max[1]) {
+            this.virtualBody = this.body.map(item => [...item])
+            this.virtualMove(max[1][0])
+            if (this.virtualSnakeHasEat) {
+                this.direct = max[1][0]
+                this.virtualSnakeHasEat = false
+            } else {
+                this.direct = max[0][0]
+            }
+        } else {
+            this.direct = max[0][0]
         }
     }
     this.virtualEatFood = function (nextDiret) {
@@ -1367,8 +812,7 @@ function Snake() {
                     也就是minPath[1][0]，但是下面一行走第二步时还是用的minPath[0][0]，然后等虚拟蛇走完吃到食物有可能会报告
                     这条路也不通。
                  */
-                //this.virtualMove(minPath[0][0])//！！！问题在这
-                if (minPath[1]) {//可以考虑把这个two删掉。two传false的时候也应该要走minPath[1]
+                if (minPath[1]) {
                     this.virtualMove(minPath[index][0])
                 } else {
                     this.virtualMove(minPath[0][0])
@@ -1393,11 +837,42 @@ function Snake() {
         }
 
     }
+    this.movetoFoodWillLonely = function (diretArr, two) {
+        this.virtualBody = this.body.map(item => [...item])
+        this.virtualMove(diretArr[0][0])
+        if (two && ((Math.abs(this.virtualBody[0][0] - food.x) == 1 && this.virtualBody[0][1] == food.y) || (Math.abs(this.virtualBody[0][1] - food.y) == 1 && this.virtualBody[0][0] == food.x))) {
+            this.virtualBody.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+        }
+        var mapArr = map.initMapArr.map(item => [...item])
+        for (var j = 0; j < this.virtualBody.length; j++) {
+            mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
+        }
+        var breakOuter = false
+        for (var i = 0; i < 4; i++) {
+            breakOuter = false;
+            var currentPoint = [this.virtualBody[0][0] + one[i][0], this.virtualBody[0][1] + one[i][1]]
+            if (check(mapArr, { x: currentPoint[1], y: currentPoint[0] })) {
+                for (var n = 0; n < 4; n++) {
+                    var nextX = currentPoint[1] + one[n][0];
+                    var nextY = currentPoint[0] + one[n][1];
+                    if (checkLonely(mapArr, { x: nextX, y: nextY })) {
+                        breakOuter = true
+                        break;
+                    }
+                }
+                if (breakOuter) continue;
+                //!!!console.log('吃食物会产生空格', diretArr[0][0])
+                //!!!if (two) console.log('追蛇尾食物在对角线会产生空格')
+                return true
+            }
+        }
+        return false
+    }
     //定时器，开始游戏时，调用
     this.speed = function () {
         timer = setInterval(function () {
             this.move();
-        }.bind(this), initSpeed);//或者:        	timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
+        }.bind(this), initSpeed);//或者:          timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
     }
     //条件处理
     this.condition = function () {
@@ -1422,14 +897,13 @@ function Snake() {
             isBegin = false;
             score.innerHTML = grade;
             document.all.sound.src = 'music/die.mp3';
-            //location.replace(location);刷新页面
             return;
         } else {
             this.show();//this.show()要放在游戏结束的判断里，当没结束时，就show，当结束，就不执行，不show。因此不会越界。
         }
     }
     this.eatFoodHandle = function () {
-        /* if (this.body.length < 166) {
+        if (this.body.length < 140) {
             if (Math.random() > 0.3) {
                 one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
                 nextpath = ["R", "L", "U", "D"];
@@ -1440,18 +914,12 @@ function Snake() {
         } else {
             one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
             nextpath = ["R", "L", "U", "D"];
-        } */
+        }
         //吃食物
         document.all.sound.src = 'music/eat.mp3';
         grade++;
         this.body.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
-        //this.body.push([-20, -20, 'url(images/tail-right.png)', null]);//-20是特意把刚吃掉的食物的初始位置挪出游戏区域隐藏，定时器再次执行snake.move()时又会设置它的位置。此举就是为了消除吃掉食物时定时器时间间隙产生的食物
         map._map.removeChild(food._food);
-        /* 
-            其实最后一个食物已经吃下了，蛇身数组也增加了(此时数据上已经把地图填满,只是视图上看起来缺1个)
-            因为这里的逻辑是先生成下一个食物，再刷新视图，所以生成下一个食物时报错了，因为地图已经填满了，
-            只是还没刷新，可惜代码已经异常停止了。
-         */
         if (this.body.length != 200) {
             food.show();
         } else {
@@ -1480,7 +948,6 @@ function Snake() {
             }, (arr.length + 1) * 10)
         }
 
-
         //计分器效果（解决了当两次吃食物的间隔很小时(小于计分器变化的时间间隔)出现的问题）（轮播也可以用这个方法）
         if (getComputedStyle(scoreBox).top == '-28px') {
             scoreBox.style.transition = '0s';
@@ -1492,25 +959,6 @@ function Snake() {
             scoreBox.style.transition = '1.2s';
             scoreBox.style.top = '-28px';
         })
-
-        //速度提升处理，积分每曾2分，速度提升0.1
-        /* if (grade % 5 == 0) {
-            document.all.sound.src = 'music/pass.mp3';
-            clearInterval(timer);
-            initSpeed -= 20;
-            flag++;
-            timer = setInterval('snake.move()', initSpeed);
-            //setTimeout(function(){alert('第'+flag+'关');},initSpeed);
-            pass.innerHTML = flag;
-            //模拟动画
-            setTimeout(function () { pass.style.color = 'blue'; pass.style.transform = 'scale(1.2)'; }, 150);
-            setTimeout(function () { pass.style.color = 'green'; pass.style.transform = 'scale(1.4)'; }, 300);
-            setTimeout(function () { pass.style.color = 'yellow'; pass.style.transform = 'scale(1.6)'; }, 450);
-            setTimeout(function () { pass.style.color = 'blue'; pass.style.transform = 'scale(1.4)'; }, 600);
-            setTimeout(function () { pass.style.color = 'green'; pass.style.transform = 'scale(1.2)'; }, 750);
-            setTimeout(function () { pass.style.color = '#DF130A'; pass.style.transform = 'scale(1)'; }, 900);
-        } */
-
     }
 }
 
@@ -1520,7 +968,7 @@ document.onkeydown = function (event) {
         if (event.keyCode == 13) {
             if (isBegin == false) {
                 if (snake.direct == null) {
-                    snake.direct = 'right';
+                    snake.direct = 'R';
                     snake.speed();
                     script.innerHTML = '点击暂停'
                     script.className = ''
@@ -1548,8 +996,8 @@ document.onkeydown = function (event) {
     if (isBegin == true) {//非暂停的时候才执行下面的
         switch (event.keyCode) {
             case 38://上键
-                snake.direct = snake.body[0][0] == snake.body[1][0] ? snake.direct : 'up';//避免反向移动，触发死亡bug
-                if (snake.direct != 'down') {//加这个判断是为了防止按与运动方向相反的键时，由于下面snake.move()的作用，蛇还是会向此时运动的方向加速移动
+                snake.direct = snake.body[0][0] == snake.body[1][0] ? snake.direct : 'U';//避免反向移动，触发死亡bug
+                if (snake.direct != 'D') {//加这个判断是为了防止按与运动方向相反的键时，由于下面snake.move()的作用，蛇还是会向此时运动的方向加速移动
                     snake.move();//长按加速
                     clearInterval(timer);//按方向键强行让蛇移动时，需要先清除定时器，再启动计时器，是为了避免定时器的移动和snake.move()的移动叠加。
                     //一定要把clearInterval(timer)放在snake.move()后面，假如放在前面，定时器就是‘清除 清除 启动 启动’(snake.move()里面是清除 启动)所以会产生定时器的叠加。
@@ -1557,24 +1005,24 @@ document.onkeydown = function (event) {
                 }
                 break;
             case 40://下键
-                snake.direct = snake.body[0][0] == snake.body[1][0] ? snake.direct : 'down';
-                if (snake.direct != 'up') {
+                snake.direct = snake.body[0][0] == snake.body[1][0] ? snake.direct : 'D';
+                if (snake.direct != 'U') {
                     snake.move();
                     clearInterval(timer);
                     timer = setInterval('snake.move()', initSpeed);
                 }
                 break;
             case 39://右键
-                snake.direct = snake.body[0][1] == snake.body[1][1] ? snake.direct : 'right';
-                if (snake.direct != 'left') {
+                snake.direct = snake.body[0][1] == snake.body[1][1] ? snake.direct : 'R';
+                if (snake.direct != 'L') {
                     snake.move();
                     clearInterval(timer);
                     timer = setInterval('snake.move()', initSpeed);
                 }
                 break;
             case 37://左键
-                snake.direct = snake.body[0][1] == snake.body[1][1] ? snake.direct : 'left';
-                if (snake.direct != 'right') {
+                snake.direct = snake.body[0][1] == snake.body[1][1] ? snake.direct : 'L';
+                if (snake.direct != 'R') {
                     snake.move();
                     clearInterval(timer);
                     timer = setInterval('snake.move()', initSpeed);
@@ -1592,7 +1040,7 @@ window.onload = function () {
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
     script.onclick = function () {
-        initSpeed = 10
+        initSpeed = 30
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
 }
