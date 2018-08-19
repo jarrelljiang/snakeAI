@@ -1060,7 +1060,7 @@ window.onload = function () {
         initSpeed = 30
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
-}
-document.documentElement.ontouchstart = function () {
-    audioAutoPlay('sound')
+    script.ontouchstart = function () {
+        audioAutoPlay('sound')
+    }
 }
