@@ -1060,4 +1060,5 @@ window.onload = function () {
         initSpeed = 30
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
+    audioAutoPlay('sound')
 }
