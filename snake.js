@@ -1,3 +1,18 @@
+function audioAutoPlay(id) {
+    var audio = document.getElementById(id),
+        play = function () {
+            audio.play();
+            document.removeEventListener("touchstart", play, false);
+        };
+    audio.play();
+    document.addEventListener("WeixinJSBridgeReady", function () {
+        play();
+    }, false);
+    document.addEventListener('YixinJSBridgeReady', function () {
+        play();
+    }, false);
+    document.addEventListener("touchstart", play, false);
+}
 //模拟的键盘事件会产生长按效果，哪怕只执行一次,所以用外挂的时候应该把长按加速功能注释掉
 function fireKeyEvent(el, evtType, keyCode) {
     var doc = el.ownerDocument,
@@ -917,7 +932,7 @@ function Snake() {
         }
         //吃食物
         sound.src = 'music/eat.mp3';
-        sound.play()
+        audioAutoPlay('sound');
         grade++;
         this.body.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
         map._map.removeChild(food._food);
@@ -925,7 +940,7 @@ function Snake() {
             food.show();
         } else {
             sound.src = 'music/pass.mp3';
-            sound.play()
+            audioAutoPlay('sound');
             script.style.transform = 'rotateY(360deg)';
             script.innerHTML = '已通关!!!';
             script.disabled = true;

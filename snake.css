@@ -49,7 +49,7 @@ body {
     top: -460px;
     width: 200px;
     height: 15px;
-    background-color: rgba(255, 255, 255, .5);
+    background-color: rgba(255, 255, 255, .6);
     transform: rotate(-45deg);
     animation: searchLights 2s ease-in 2s infinite;
 }
