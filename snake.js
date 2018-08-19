@@ -916,14 +916,16 @@ function Snake() {
             nextpath = ["R", "L", "U", "D"];
         }
         //吃食物
-        document.all.sound.src = 'music/eat.mp3';
+        sound.src = 'music/eat.mp3';
+        sound.play()
         grade++;
         this.body.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
         map._map.removeChild(food._food);
         if (this.body.length != 200) {
             food.show();
         } else {
-            document.all.sound.src = 'music/pass.mp3';
+            sound.src = 'music/pass.mp3';
+            sound.play()
             script.style.transform = 'rotateY(360deg)';
             script.innerHTML = '已通关!!!';
             script.disabled = true;
