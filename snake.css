@@ -1,3 +1,4 @@
+html,
 body {
     margin: 0;
     padding: 0;
@@ -28,7 +29,7 @@ body {
 #script {
     cursor: pointer;
     width: 120px;
-    height: 36px;
+    height: 40px;
     font-size: 20px;
     background: rgb(247, 243, 190);
     color: rgb(200, 2, 1);
@@ -37,7 +38,7 @@ body {
     top: -6px;
     border: none;
     box-shadow: 0 0 10px 0 rgb(200, 2, 1);
-    transition: 1s;
+    transition: 2s;
     outline: none;
     overflow: hidden;
 }
@@ -49,7 +50,7 @@ body {
     top: -460px;
     width: 200px;
     height: 15px;
-    background-color: rgba(255, 255, 255, .6);
+    background-color: rgba(255, 255, 255, .7);
     transform: rotate(-45deg);
     animation: searchLights 2s ease-in 2s infinite;
 }

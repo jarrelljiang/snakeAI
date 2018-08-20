@@ -37,27 +37,7 @@
                 <strong id="score"></strong>
             </span>
             <br>
-            <!--点击重置游戏(下面的变量不能加var，加了var的话是不会影响后面的函数的，因为语句是写在行间的)-->
-            <a class="button" id="a" onclick="
-            initSpeed=200;
-            grade=0;
-            flag=1;
-            isBegin=true;
-            timer=null;
-            document.body.removeChild(map.map1);
-            first.innerHTML=0;
-            second.innerHTML=0;
-            pass.innerHTML=1;
-            map=new Map();
-            map.show();
-            snake=new Snake();
-            snake.show();
-            food=new Food();
-            food.show();
-            snake.direct='right';
-            snake.speed();
-            gameOver.style.display='none';">Try again!
-            </a>
+            <a class="button" id="a">Try again!</a>
         </p>
     </div>
     <p id="paused">Paused...</p>
@@ -69,7 +49,7 @@
 <bgsound src='' id="sound" >
 <![endif]-->
     <![if !IE]>
-    <audio src="" id="sound" autoplay="autoplay">
+    <audio src='' id="sound" autoplay="autoplay">
     </audio>
     <![endif]>
 
