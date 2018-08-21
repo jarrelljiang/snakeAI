@@ -431,10 +431,10 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 115) {
-            if (this.body.length > 180) {
+        if (this.body.length > 114) {
+            if (this.body.length > 179) {
                 this.dfsLongestToTail()
-            } else if (this.body.length > 160) {
+            } else if (this.body.length > 159) {
                 if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                     this.farthestMovetoFood()
                 } else {
@@ -915,7 +915,7 @@ function Snake() {
         }
     }
     this.eatFoodHandle = function () {
-        if (this.body.length < 120) {
+        if (this.body.length < 119) {
             if (Math.random() > 0.3) {
                 one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
                 nextpath = ["R", "L", "U", "D"];
