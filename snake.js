@@ -432,9 +432,7 @@ function Snake() {
          */
         this.virtualSnakeHasEat = false
         if (this.body.length > 114) {
-            if (this.body.length > 179) {
-                this.moveToTail()//this.dfsLongestToTail()
-            } else if (this.body.length > 159) {
+             if (this.body.length > 159) {
                 if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                     this.farthestMovetoFood()
                 } else {
