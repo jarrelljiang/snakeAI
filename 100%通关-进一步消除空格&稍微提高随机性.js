@@ -433,7 +433,7 @@ function Snake() {
         this.virtualSnakeHasEat = false
         if (this.body.length > 114) {
             if (this.body.length > 179) {
-                this.dfsLongestToTail()
+                this.moveToTail()//this.dfsLongestToTail()
             } else if (this.body.length > 159) {
                 if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                     this.farthestMovetoFood()
@@ -734,7 +734,7 @@ function Snake() {
             mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
         }
         //判断各个方向会不会产生空格
-        if (bfsNextFarDiret.length > 1) {
+        if (bfsNextFarDiret.length > 1&&this.body.length<198) {
             var breakOuter = false
             for (var i = 0; i < 4; i++) {
                 breakOuter = false;
@@ -884,7 +884,7 @@ function Snake() {
     this.speed = function () {
         timer = setInterval(function () {
             this.move();
-        }.bind(this), initSpeed);//或者:        	timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
+        }.bind(this), initSpeed);//或者:          timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
     }
     //条件处理
     this.condition = function () {
@@ -1052,7 +1052,7 @@ window.onload = function () {
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
     script.onclick = function () {
-        initSpeed = 10
+        initSpeed = 30
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
 }

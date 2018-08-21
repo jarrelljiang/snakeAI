@@ -433,7 +433,7 @@ function Snake() {
         this.virtualSnakeHasEat = false
         if (this.body.length > 114) {
             if (this.body.length > 179) {
-                this.dfsLongestToTail()
+                this.moveToTail()//this.dfsLongestToTail()
             } else if (this.body.length > 159) {
                 if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                     this.farthestMovetoFood()
@@ -734,7 +734,7 @@ function Snake() {
             mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
         }
         //判断各个方向会不会产生空格
-        if (bfsNextFarDiret.length > 1) {
+        if (bfsNextFarDiret.length > 1&&this.body.length<198) {
             var breakOuter = false
             for (var i = 0; i < 4; i++) {
                 breakOuter = false;
