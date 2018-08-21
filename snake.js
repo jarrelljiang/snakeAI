@@ -432,7 +432,9 @@ function Snake() {
          */
         this.virtualSnakeHasEat = false
         if (this.body.length > 114) {
-             if (this.body.length > 159) {
+            if (this.body.length > 179) {
+                this.dfsLongestToTail()
+            } else if (this.body.length > 159) {
                 if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                     this.farthestMovetoFood()
                 } else {
@@ -445,7 +447,7 @@ function Snake() {
                 this.moveToTail()
             }
         } else {//蛇身小于125的时候走最短距离吃食物
-            if (Math.random() < 0.12) {//如果走最远路线吃食物的概率过大，可能会出现找不到蛇尾的情况！因为判断不了沿最远路线走完蛇头蛇尾是否连通
+            if (Math.random() < 0.11) {//如果走最远路线吃食物的概率过大，可能会出现找不到蛇尾的情况！因为判断不了沿最远路线走完蛇头蛇尾是否连通
                 this.farthestMovetoFood()
             } else {
                 this.shortestMovetoFood();
@@ -732,7 +734,7 @@ function Snake() {
             mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
         }
         //判断各个方向会不会产生空格
-        if (bfsNextFarDiret.length > 1&&this.body.length<198) {
+        if (bfsNextFarDiret.length > 1) {
             var breakOuter = false
             for (var i = 0; i < 4; i++) {
                 breakOuter = false;
@@ -882,7 +884,7 @@ function Snake() {
     this.speed = function () {
         timer = setInterval(function () {
             this.move();
-        }.bind(this), initSpeed);//或者:        	timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
+        }.bind(this), initSpeed);//或者:          timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
     }
     //条件处理
     this.condition = function () {
@@ -913,7 +915,7 @@ function Snake() {
         }
     }
     this.eatFoodHandle = function () {
-        if (this.body.length < 119) {
+        if (this.body.length < 115) {
             if (Math.random() > 0.3) {
                 one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
                 nextpath = ["R", "L", "U", "D"];
