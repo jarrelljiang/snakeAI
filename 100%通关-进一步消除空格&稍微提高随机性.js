@@ -431,23 +431,16 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 114) {
-            if (this.body.length > 179) {
+        if (this.body.length > 120) {
+            if (this.body.length > 168) {
                 this.dfsLongestToTail()
-            } else if (this.body.length > 159) {
-                if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
-                    this.farthestMovetoFood()
-                } else {
-                    this.moveToTail()
-                }
-                //this.moveToTail()//this.dfsLongestToTail()
             } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                 this.shortestMovetoFood()//this.farthestMovetoFood()
             } else {
                 this.moveToTail()
             }
-        } else {//蛇身小于125的时候走最短距离吃食物
-            if (Math.random() < 0.11) {//如果走最远路线吃食物的概率过大，可能会出现找不到蛇尾的情况！因为判断不了沿最远路线走完蛇头蛇尾是否连通
+        } else {//蛇身小于130的时候走最短距离吃食物
+            if (Math.random() < 0.11) {//概率小于0.1，走最大距离，大于0.1走最小距离吃
                 this.farthestMovetoFood()
             } else {
                 this.shortestMovetoFood();
@@ -517,6 +510,7 @@ function Snake() {
     }
     this.shortestMovetoFood = function (isBFS) {
         this.virtualSnakeHasEat = false
+        //外挂逻辑
         var mapArr1 = map.initMapArr.map(item => [...item])//复制数组
         //蛇尾那一格是可以走的，不能标为1
         for (var i = 0; i < this.body.length - 1; i++) {
@@ -614,7 +608,7 @@ function Snake() {
             //判断虚拟蛇按最远路径吃到食物后，蛇头和蛇尾能不能连通
             var cacheBfsNextFarDiret = [...bfsNextFarDiret]
             this.virtualEatFood(bfsNextFarDiret[0][0], false)
-            if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheBfsNextFarDiret
+            if (minStep < 10000 /* && !this.movetoFoodWillLonely(cacheBfsNextFarDiret, true) */) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheBfsNextFarDiret
                 //!!!console.log('虚拟蛇走最远路径' + cacheBfsNextFarDiret[0] + '吃完食物后蛇头和蛇尾能连通')
                 this.direct = cacheBfsNextFarDiret[0][0]
             } else {/* 虚拟蛇走完后蛇头和蛇尾不能连通，分2种情况：1.假如cacheBfsNextFarDiret[1]存在，先向着cacheBfsNextFarDiret[1]走，
@@ -786,16 +780,12 @@ function Snake() {
         var tailIndex = this.body.length - 1;
         DFS(mapArr, [this.body[0][1], this.body[0][0]], [this.body[tailIndex][1], this.body[tailIndex][0]], '');
         //!!!console.log('dfs最长路径追蛇尾-', max)
-        //max数组里面的2个值都是最大长度值
         if (max[1]) {
             this.virtualBody = this.body.map(item => [...item])
             this.virtualMove(max[1][0])
             if (this.virtualSnakeHasEat) {
                 this.direct = max[1][0]
                 this.virtualSnakeHasEat = false
-            } else if (this.movetoFoodWillLonely(max)) {
-                //console.log('dfs最远追蛇尾会产生空格，且最远路径不止1条', max)
-                this.direct = max[1][0]
             } else {
                 this.direct = max[0][0]
             }
@@ -847,8 +837,6 @@ function Snake() {
         }
 
     }
-    //最远路径吃食物没有用到movetoFoodWillLonely，因为有0.12的概率是走最远路径吃食物，有可能会形成空格
-    //movetoFoodWillLonely名字没取好，不仅仅适用于朝食物移动
     this.movetoFoodWillLonely = function (diretArr, two) {
         this.virtualBody = this.body.map(item => [...item])
         this.virtualMove(diretArr[0][0])
@@ -915,7 +903,7 @@ function Snake() {
         }
     }
     this.eatFoodHandle = function () {
-        if (this.body.length < 115) {
+        if (this.body.length < 130) {
             if (Math.random() > 0.3) {
                 one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
                 nextpath = ["R", "L", "U", "D"];
@@ -1052,7 +1040,7 @@ window.onload = function () {
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
     script.onclick = function () {
-        initSpeed = 30
+        initSpeed = 10
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
 }
