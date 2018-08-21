@@ -1040,7 +1040,7 @@ window.onload = function () {
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
     script.onclick = function () {
-        initSpeed = 10
+        initSpeed = 20
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
 }
