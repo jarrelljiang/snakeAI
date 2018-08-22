@@ -431,8 +431,8 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 120) {
-            if (this.body.length > 168) {
+        if (this.body.length > 119) {
+            if (this.body.length > 169) {
                 this.dfsLongestToTail()
             } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                 this.shortestMovetoFood()//this.farthestMovetoFood()
@@ -903,7 +903,7 @@ function Snake() {
         }
     }
     this.eatFoodHandle = function () {
-        if (this.body.length < 130) {
+        if (this.body.length < 128) {
             if (Math.random() > 0.3) {
                 one = [[0, 1], [0, -1], [-1, 0], [1, 0]];
                 nextpath = ["R", "L", "U", "D"];
@@ -936,7 +936,7 @@ function Snake() {
             shade.style.position = 'absolute'
             shade.style.background = 'rgba(255,255,255,0.7)'
             map._map.appendChild(shade)
-            var arr = this.body.reverse()
+            var arr = this.body.map(item=>[...item]).reverse()
             for (let i = 0; i < arr.length; i++) {
                 setTimeout(function () {
                     shade.style.top = arr[i][1] * 40 + 'px'
