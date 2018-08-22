@@ -19,7 +19,7 @@ body {
     margin: 0 auto 25px;
     position: relative;
     overflow: hidden;
-    margin-left: 47%;
+    margin-left: 48%;
 }
 
 #scoreBox {
@@ -44,6 +44,7 @@ body {
     transition: 2s;
     outline: none;
     overflow: hidden;
+    margin-left: 26px;
 }
 
 .light:before {
