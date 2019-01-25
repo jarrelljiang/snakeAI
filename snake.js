@@ -199,7 +199,7 @@ function Map() {
         this.map1 = document.createElement('div');
         this.map1.style.width = 946 + 'px';
         this.map1.style.height = 501 + 'px';
-        this.map1.style.backgroundImage = 'url(images/map.jpg)';
+        this.map1.style.backgroundImage = 'url(images/map.png)';
         this._map.style.position = 'absolute';
         this._map.style.width = this.width + 'px';
         this._map.style.height = this.height + 'px';
@@ -208,6 +208,8 @@ function Map() {
         this.map1.style.position = this.position;
         this.map1.style.margin = '0 auto';
         document.body.appendChild(this.map1);
+        this.map1.style.opacity=0;
+        this.map1.style.transition='2s';
         this.map1.appendChild(this._map);
     }
 }

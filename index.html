@@ -6,21 +6,22 @@
     <title>贪吃蛇-AI</title>
     <script src="snow.js"></script>
     <script src="snake.js"></script>
+    <script src="bubbly-bg.js"></script>
     <link rel="shortcut icon" href="snake.ico" />
     <link rel="stylesheet" href="snake.css" />
 </head>
 
 <body>
-    <h2 style="text-align:center; color:red;margin-top: 40px;margin-left: 30px">按
+    <h2 id="message" style="text-align:center; color:red;margin-top: 40px;margin-left: 30px;opacity: 0;transition: 2s">按
         <span class="enter">回车</span> 开始/暂停</h2>
-    <h2 id="h2">
+    <h2 id="h2" style="opacity: 0;transition: 2s">
         <strong>得分</strong>:
         <div id="scoreBox" style="top:0px">
             <div id="first">4</div>
             <div id="second">4</div>
         </div>
     </h2>
-    <div style="text-align: center;">
+    <div id="buttonDiv" style="text-align: center;opacity: 0;transition: 2s">
         <button id="script" class="light">开启AI</button>
     </div>
     <!--游戏结束画面-->
@@ -41,9 +42,9 @@
         </p>
     </div>
     <p id="paused">Paused...</p>
-    <div class="img">
-        <img class="picLeft" src="images/pic-l.jpg" />
-        <img class="picRight" height="192" src="images/pic-r.jpg" />
+    <div class="img" id="img" style="opacity: 0;transition: 2s">
+        <img class="picLeft" src="images/pic-l.png" />
+        <img class="picRight" height="192" src="images/pic-r.png" />
     </div>
     <!--[if IE]>
 <bgsound src='' id="sound" >
@@ -64,11 +65,17 @@
             <img id="start" width="200" src="images/start.png" />
         </div>
     </div>
-    <center>© 2016-2018 JiangLei</center>
+    <center id="footer">© 2016-2019 JiangLei</center>
     <script>
         var snow = new Snow();
         start.onclick = function () {
+            footer.style.right=0;
             gameStart.style.opacity = 0;
+            message.style.opacity = 1;
+            h2.style.opacity = 1;
+            buttonDiv.style.opacity = 1;
+            img.style.opacity = 1;
+            map.map1.style.opacity = 1;
             setTimeout(function () {
                 gameStart.style.display = 'none';
             }, 2000);
@@ -96,6 +103,13 @@
             she.style.right = '345px';
             she.style.transform = 'rotate(3600deg)';
         }, 50);
+        bubbly({
+            colorStart: "#fff4e6",
+            colorStop: "#ffe9e4",
+            blur: 1,
+            compose: "source-over",
+            bubbleFunc: () => `hsla(${Math.random() * 50}, 100%, 50%, .3)`
+        })
     </script>
 
 </body>
