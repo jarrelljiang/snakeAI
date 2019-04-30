@@ -1,0 +1,117 @@
+<!-- 注意：加了doctype html的话，JS就必须要符号规范，设置width、height、top等等时，必须要加上px，由于后面代码有些没有加px，所有就不能加doctype html-->
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <title>贪吃蛇-AI</title>
+    <script src="snow.js"></script>
+    <script src="snake.js"></script>
+    <script src="bubbly-bg.js"></script>
+    <link rel="shortcut icon" href="snake.ico" />
+    <link rel="stylesheet" href="snake.css" />
+</head>
+
+<body>
+    <h2 id="message" style="text-align:center; color:red;margin-top: 40px;margin-left: 30px;opacity: 0;transition: 2s">按
+        <span class="enter">回车</span> 开始/暂停</h2>
+    <h2 id="h2" style="opacity: 0;transition: 2s">
+        <strong>得分</strong>:
+        <div id="scoreBox" style="top:0px">
+            <div id="first">4</div>
+            <div id="second">4</div>
+        </div>
+    </h2>
+    <div id="buttonDiv" style="text-align: center;opacity: 0;transition: 2s">
+        <button id="script" class="light">开启AI</button>
+    </div>
+    <!--游戏结束画面-->
+    <div id="gameOver">
+        <div>
+            <!--灰色半透明背景-->
+        </div>
+        <!--前景小窗-->
+        <p>Game Over!
+            <br>
+            <img src="images/cry.gif" />
+            <br>
+            <span>本次得分:
+                <strong id="score"></strong>
+            </span>
+            <br>
+            <a class="button" id="a">Try again!</a>
+        </p>
+    </div>
+    <p id="paused">Paused...</p>
+    <div class="img" id="img" style="opacity: 0;transition: 2s">
+        <img class="picLeft" src="images/pic-l.png" />
+        <img class="picRight" height="192" src="images/pic-r.png" />
+    </div>
+    <!--[if IE]>
+<bgsound src='' id="sound" >
+<![endif]-->
+    <![if !IE]>
+    <audio src='' id="sound" autoplay="autoplay">
+    </audio>
+    <![endif]>
+
+    <!--游戏开始画面-->
+    <div id="gameStart">
+        <div>
+            <img id="fireworks-l" src="images/fireworks.gif" />
+            <img id="fireworks-r" src="images/fireworks.gif" />
+            <img id="tan" width="130" src="images/tan.png" />
+            <img id="chi" width="170" src="images/chi.png" />
+            <img id="she" width="130" src="images/she.png" />
+            <img id="start" width="200" src="images/start.png" />
+        </div>
+    </div>
+    <center id="footer">© 2016-2019 JiangLei</center>
+    <script>
+        var snow = new Snow();
+        start.onclick = function () {
+            footer.style.right=0;
+            gameStart.style.opacity = 0;
+            message.style.opacity = 1;
+            h2.style.opacity = 1;
+            buttonDiv.style.opacity = 1;
+            img.style.opacity = 1;
+            map.map1.style.opacity = 1;
+            setTimeout(function () {
+                gameStart.style.display = 'none';
+            }, 2000);
+        }
+        start.onmouseover = function () {
+            this.src = 'images/start-hover.png';
+        }
+        start.onmouseout = function () {
+            this.src = 'images/start.png';
+        }
+        setTimeout(function () {
+            start.style.display = 'block';
+            start.style.opacity = 1;
+            start.style.transform = 'scale(1)';
+        }, 2300);
+        setTimeout(function () {
+            tan.style.left = '300px';
+            tan.style.transform = 'rotate(3600deg)';
+        }, 50);
+        setTimeout(function () {
+            chi.style.top = '6px';
+            chi.style.transform = 'rotate(1080deg)';
+        }, 50);
+        setTimeout(function () {
+            she.style.right = '345px';
+            she.style.transform = 'rotate(3600deg)';
+        }, 50);
+        bubbly({
+            colorStart: "#fff4e6",
+            colorStop: "#ffe9e4",
+            blur: 1,
+            compose: "source-over",
+            bubbleFunc: () => `hsla(${Math.random() * 50}, 100%, 50%, .3)`
+        })
+    </script>
+
+</body>
+
+</html>
