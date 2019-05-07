@@ -27,7 +27,7 @@ gulp.task("css", function() {
 });
 
 gulp.task("js", function() {
-    gulp.src(["snow.js", "snake.js", "bubbly-bg.js"])
+    gulp.src(["src/snow.js", "src/snake-es5.js", "src/bubbly-bg.js"])
         .pipe(uglify({ mangle: { toplevel: true } }))
         .pipe(concat("all.min.js"))
         .pipe(gulp.dest("dist"));
