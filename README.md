@@ -3,7 +3,7 @@
 
 <font size=70>[查看demo](https://jarrelljiang.github.io/snakeAI/)</font>
 
-![avatar](https://github.com/jarrelljiang/snakeAI/blob/master/images/snake.GIF?raw=true)
+![avatar](https://github.com/jarrelljiang/snakeAI/blob/master/images/snake1.GIF?raw=true)
 
 如果在中期，蛇头走最远路线追蛇尾时，假如虚拟蛇走完下一步会形成一个孤立的空格，则实际蛇走距蛇头第二远的那一格。  
 可以把4个方向中能走的路线方向放入一个数组，按从长到短排，最长的会形成孤立空格的话就走第二长的。  
