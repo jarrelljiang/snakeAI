@@ -981,7 +981,7 @@ document.onkeydown = function (event) {
                     script.className = ''
                 }
                 if (timer == null) {
-                    timer = setInterval('snake.move()', initSpeed);
+                    timer = setInterval(function(){snake.move()}, initSpeed);
                     document.title = '贪吃蛇';
                     script.innerHTML = '点击暂停'
                     script.className = ''
@@ -1008,7 +1008,7 @@ document.onkeydown = function (event) {
                     snake.move();//长按加速
                     clearInterval(timer);//按方向键强行让蛇移动时，需要先清除定时器，再启动计时器，是为了避免定时器的移动和snake.move()的移动叠加。
                     //一定要把clearInterval(timer)放在snake.move()后面，假如放在前面，定时器就是‘清除 清除 启动 启动’(snake.move()里面是清除 启动)所以会产生定时器的叠加。
-                    timer = setInterval('snake.move()', initSpeed);//清除了定时器之后再启动定时器。
+                    timer = setInterval(function(){snake.move()}, initSpeed);//清除了定时器之后再启动定时器。
                 }
                 break;
             case 40://下键
@@ -1016,7 +1016,7 @@ document.onkeydown = function (event) {
                 if (snake.direct != 'U') {
                     snake.move();
                     clearInterval(timer);
-                    timer = setInterval('snake.move()', initSpeed);
+                    timer = setInterval(function(){snake.move()}, initSpeed);
                 }
                 break;
             case 39://右键
@@ -1024,7 +1024,7 @@ document.onkeydown = function (event) {
                 if (snake.direct != 'L') {
                     snake.move();
                     clearInterval(timer);
-                    timer = setInterval('snake.move()', initSpeed);
+                    timer = setInterval(function(){snake.move()}, initSpeed);
                 }
                 break;
             case 37://左键
@@ -1032,7 +1032,7 @@ document.onkeydown = function (event) {
                 if (snake.direct != 'R') {
                     snake.move();
                     clearInterval(timer);
-                    timer = setInterval('snake.move()', initSpeed);
+                    timer = setInterval(function(){snake.move()}, initSpeed);
                 }
                 break;
         }
@@ -1040,6 +1040,49 @@ document.onkeydown = function (event) {
 }
 //自动加载游戏
 window.onload = function () {
+    var snow = new Snow();
+    start.onclick = function () {
+        footer.style.right=0;
+        gameStart.style.opacity = 0;
+        message.style.opacity = 1;
+        h2.style.opacity = 1;
+        buttonDiv.style.opacity = 1;
+        img.style.opacity = 1;
+        map.map1.style.opacity = 1;
+        setTimeout(function () {
+            gameStart.style.display = 'none';
+        }, 2000);
+    }
+    start.onmouseover = function () {
+        this.src = 'images/start-hover.png';
+    }
+    start.onmouseout = function () {
+        this.src = 'images/start.png';
+    }
+    setTimeout(function () {
+        start.style.display = 'block';
+        start.style.opacity = 1;
+        start.style.transform = 'scale(1)';
+    }, 2300);
+    setTimeout(function () {
+        tan.style.left = '300px';
+        tan.style.transform = 'rotate(3600deg)';
+    }, 50);
+    setTimeout(function () {
+        chi.style.top = '6px';
+        chi.style.transform = 'rotate(1080deg)';
+    }, 50);
+    setTimeout(function () {
+        she.style.right = '345px';
+        she.style.transform = 'rotate(3600deg)';
+    }, 50);
+    bubbly({
+        colorStart: "#fff4e6",
+        colorStop: "#ffe9e4",
+        blur: 1,
+        compose: "source-over",
+        bubbleFunc: () => `hsla(${Math.random() * 50}, 100%, 50%, .3)`
+    })
     map = new Map();
     map.show();
     snake = new Snake();
