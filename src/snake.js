@@ -971,6 +971,7 @@ function Snake() {
 
 document.onkeydown = function (event) {
     //按下回车键，开始/暂停游戏
+    if (snake.body.length == 200) location.reload()
     if (getComputedStyle(gameStart).display == 'none' && getComputedStyle(gameOver).display == 'none') {
         if (event.keyCode == 13) {
             if (isBegin == false) {
