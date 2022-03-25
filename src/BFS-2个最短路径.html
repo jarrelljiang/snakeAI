@@ -37,10 +37,10 @@ function BFS(map, startArr, endArr) {
         var cunrrentPoint = list[0];//当队列中有点时，取出点比较是否为终点
         list.shift();//删除该点
         if (cunrrentPoint.x == endArr[0] && cunrrentPoint.y == endArr[1]) {
-            if (minStep > cunrrentPoint.step) {
+            if (cunrrentPoint.step < minStep) {
                 minStep = cunrrentPoint.step;
                 minPath.push(cunrrentPoint.path);
-            } else if (minStep == cunrrentPoint.step) {
+            } else if (cunrrentPoint.step == minStep) {
                 minPath.push(cunrrentPoint.path);
             }
             continue;
