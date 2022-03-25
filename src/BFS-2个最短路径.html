@@ -19,15 +19,6 @@ function Point(x, y, step, path) {
     this.step = step;
     this.path = path;
 }
-//按字典序较小选择路径
-// function judge(A, B) {
-//     for (var i = 0; i < A.length; i++) {
-//         if (A[i] < B[i]) {
-//             return false
-//         }
-//     }
-//     return true;
-// }
 //判断点是否出界或被访问过
 function check(map, cunrrentPoint) {
     var n = map.length - 1;
@@ -74,7 +65,7 @@ function BFS(map, startArr, endArr) {
     return;
 }
 
-BFS(map, [2,2], [2,2]);//map数组，起点，终点
+BFS(map, [0,0], [2,2]);//map数组，起点，终点
 
 </script>
 </body>
