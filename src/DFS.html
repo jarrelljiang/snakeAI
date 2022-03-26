@@ -5,7 +5,8 @@
 </head>
 <body>
 <script type="text/javascript">
-var min=''
+var min=''//最短路径
+var all=[]//所有路径
 var next=[[0,1],[1,0],[0,-1],[-1,0]]//右下左上
 var d=['R','D','L','U']
 var map=[//注意起点初始要设为1
@@ -18,7 +19,7 @@ var map=[//注意起点初始要设为1
 function DFS(map,startArr,endArr,diret){
 	var t=[]//下一步的坐标
 	if(startArr[0]==endArr[0]&&startArr[1]==endArr[1]){//是否到达终点
-		console.log(diret)
+		all.push(diret)
 		if(min.length==0||diret.length<min.length){
 			min=diret
 		}
@@ -46,6 +47,7 @@ if(min.length>0){
 }else{
 	console.log('没有通路')
 }
+console.log(all)
 </script>
 </body>
 </html>
