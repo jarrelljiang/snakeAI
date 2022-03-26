@@ -28,7 +28,7 @@ function DFS(map,startArr,endArr,diret){
 	for(var k=0;k<4;k++){
 		t[0]=startArr[0]+next[k][0]
 		t[1]=startArr[1]+next[k][1]
-		if(t[0]<0||t[0]>map.length-1||t[0]<0||t[1]>map[0].length-1){//越界
+		if(t[0]<0||t[0]>map.length-1||t[1]<0||t[1]>map[0].length-1){//越界
 			continue;
 		}
 		if(map[t[0]][t[1]]==0){
