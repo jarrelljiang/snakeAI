@@ -437,6 +437,7 @@ function Snake() {
             if (this.body.length > 169) {
                 this.dfsLongestToTail()
             } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
+                //当蛇头挨着食物的时候，走最短距离
                 this.shortestMovetoFood()//this.farthestMovetoFood()
             } else {
                 this.moveToTail()
@@ -777,7 +778,7 @@ function Snake() {
         total = 0
         max = '';
         /* 
-        我设置的total最大只能为十万，也就是说在十万次执行后还没找到max，那max就是空，实际上哪怕终点就在起点旁边，
+        我设置的total最大只能为200000，也就是说在十万次执行后还没找到max，那max就是空，实际上哪怕终点就在起点旁边，
         DFS还是有可能在十万次内找不到max。DFS按照我设置的策略会优先向右边找，如果终点在起点左边，就有可能在十万次内找不到，
         这时候应该走BFS
          */
