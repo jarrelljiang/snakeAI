@@ -27,8 +27,9 @@ gulp.task("css", function() {
 });
 
 gulp.task("js", function() {
-    gulp.src(["src/snow.js", "src/snake-es5.js", "src/bubbly-bg.js"])
+    return gulp.src(["src/snake-es5.js", "src/bubbly-bg.js"])  // 添加 return
         .pipe(uglify({ mangle: { toplevel: true } }))
         .pipe(concat("all.min.js"))
         .pipe(gulp.dest("dist"));
 });
+
