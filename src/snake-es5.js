@@ -1348,8 +1348,6 @@ document.onkeydown = function (event) {
 
 
 window.onload = function () {
-  var snow = new Snow();
-
   start.onclick = function () {
     footer.style.right = 0;
     gameStart.style.opacity = 0;
