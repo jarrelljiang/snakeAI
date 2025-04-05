@@ -196,7 +196,7 @@ function DFS(map, startArr, endArr, diret) {
 
 
   for (var k = 0; k < 4; k++) {
-    if (total > 200000) break;
+    if (total > 1000000) break;
     t[0] = startArr[0] + next[k][0];
     t[1] = startArr[1] + next[k][1];
 
@@ -507,8 +507,8 @@ function Snake() {
      */
     this.virtualSnakeHasEat = false;
 
-    if (this.body.length > 119) {
-      if (this.body.length > 169) {
+    if (this.body.length > 115) {
+      if (this.body.length > 165) {
         this.dfsLongestToTail();
       } else if (Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y || Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x) {
         this.shortestMovetoFood(); //this.farthestMovetoFood()
@@ -914,7 +914,7 @@ function Snake() {
     this.virtualBody = this.body.map(function (item) {
       return _toConsumableArray(item);
     });
-    this.virtualMove(bfsNextFarDiret[0][0]);
+    if(bfsNextFarDiret[0]) this.virtualMove(bfsNextFarDiret[0][0]);
     var mapArr = map.initMapArr.map(function (item) {
       return _toConsumableArray(item);
     });
@@ -1403,7 +1403,7 @@ window.onload = function () {
   food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
 
   script.onclick = function () {
-    initSpeed = 20;
+    initSpeed = 30;
     fireKeyEvent(document.documentElement, 'keydown', 13);
   };
 };

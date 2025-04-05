@@ -153,7 +153,7 @@ function DFS(map, startArr, endArr, diret) {
     }
     //枚举4个方向的走法
     for (var k = 0; k < 4; k++) {
-        if (total > 200000) break;
+        if (total > 1000000) break;
         t[0] = startArr[0] + next[k][0]
         t[1] = startArr[1] + next[k][1]
         if (t[0] < 0 || t[0] > map.length - 1 || t[0] < 0 || t[1] > map[0].length - 1) {//越界
@@ -433,8 +433,8 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 119) {
-            if (this.body.length > 169) {
+        if (this.body.length > 115) {
+            if (this.body.length > 165) {
                 this.dfsLongestToTail()
             } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
                 //当蛇头挨着食物的时候，走最短距离
@@ -725,7 +725,7 @@ function Snake() {
         bfsNextFarDiret.sort((a, b) => b.length - a.length)
         //!!!console.log('最远追蛇尾', bfsNextFarDiret)
         this.virtualBody = this.body.map(item => [...item])
-        this.virtualMove(bfsNextFarDiret[0][0])
+        if(bfsNextFarDiret[0])  this.virtualMove(bfsNextFarDiret[0][0])
         var mapArr = map.initMapArr.map(item => [...item])
         for (var j = 0; j < this.virtualBody.length; j++) {
             mapArr[this.virtualBody[j][1]][this.virtualBody[j][0]] = 1
@@ -1091,7 +1091,7 @@ window.onload = function () {
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
     script.onclick = function () {
-        initSpeed = 20
+        initSpeed = 30
         fireKeyEvent(document.documentElement, 'keydown', 13);
     }
 }
