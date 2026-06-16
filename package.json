@@ -4,6 +4,7 @@
   "description": "",
   "main": "snake.js",
   "scripts": {
+    "compress": "node compress.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -13,7 +14,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-
+    "clean-css": "^5.3.3",
+    "html-minifier-terser": "^7.2.0",
+    "terser": "^5.43.1"
   },
   "dependencies": {
 

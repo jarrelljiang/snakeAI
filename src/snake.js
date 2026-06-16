@@ -199,7 +199,7 @@ function Map() {
         this.map1 = document.createElement('div');
         this.map1.style.width = 946 + 'px';
         this.map1.style.height = 501 + 'px';
-        this.map1.style.backgroundImage = 'url(images/map.png)';
+        this.map1.style.backgroundImage = 'url(../images/map.png)';
         this._map.style.position = 'absolute';
         this._map.style.width = this.width + 'px';
         this._map.style.height = this.height + 'px';
@@ -218,7 +218,7 @@ function Food() {
     this.width = 40;
     this.height = 40;
     this.position = 'absolute';
-    this.background = 'url(images/body2.png)';
+    this.background = 'url(../images/body2.png)';
     this.x = 0;
     this.y = 0;
     this._food;
@@ -294,10 +294,10 @@ function Snake() {
     //初始蛇身
     //这里的null是蛇身的dom元素，先用null表示，后面会创建实际的dom元素插入视图
     this.body = new Array(
-        [4, 2, 'url(images/head-right.png)', null],//蛇头
-        [3, 2, 'url(images/body1.png)', null],
-        [2, 2, 'url(images/tail2-right.png)', null],
-        [1, 2, 'url(images/tail-right.png)', null]
+        [4, 2, 'url(../images/head-right.png)', null],//蛇头
+        [3, 2, 'url(../images/body1.png)', null],
+        [2, 2, 'url(../images/tail2-right.png)', null],
+        [1, 2, 'url(../images/tail-right.png)', null]
     );
     //生成蛇身
     this.show = function () {
@@ -307,8 +307,8 @@ function Snake() {
                 this.body[i][3].style.width = this.width;
                 this.body[i][3].style.height = this.height;
                 this.body[i][3].style.position = this.position;
-                this.body[this.body.length - 2][2] = 'url(images/tail2-right.png)';
-                this.body[this.body.length - 3][2] = 'url(images/body1.png)';
+                this.body[this.body.length - 2][2] = 'url(../images/tail2-right.png)';
+                this.body[this.body.length - 3][2] = 'url(../images/body1.png)';
                 this.body[i][3].style.background = this.body[i][2];
                 map._map.appendChild(this.body[i][3]);
             }
@@ -325,22 +325,22 @@ function Snake() {
                 var nseg = this.body[i + 1]; // Next segment
                 if (segy < nseg[1]) {
                     // Up
-                    this.body[i][3].style.background = 'url(images/head-up.png)';
+                    this.body[i][3].style.background = 'url(../images/head-up.png)';
                     this.body[i][3].style.backgroundSize = '88% 100%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 } else if (segx > nseg[0]) {
                     // Right
-                    this.body[i][3].style.background = 'url(images/head-right.png)';
+                    this.body[i][3].style.background = 'url(../images/head-right.png)';
                     this.body[i][3].style.backgroundSize = '100% 88%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 } else if (segy > nseg[1]) {
                     // Down
-                    this.body[i][3].style.background = 'url(images/head-down.png)';
+                    this.body[i][3].style.background = 'url(../images/head-down.png)';
                     this.body[i][3].style.backgroundSize = '88% 100%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 } else if (segx < nseg[0]) {
                     // Left
-                    this.body[i][3].style.background = 'url(images/head-left.png)';
+                    this.body[i][3].style.background = 'url(../images/head-left.png)';
                     this.body[i][3].style.backgroundSize = '100% 88%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 }
@@ -349,22 +349,22 @@ function Snake() {
                 var pseg = this.body[i - 1]; // Prev segment
                 if (pseg[1] < segy) {
                     // Up
-                    this.body[i][3].style.background = 'url(images/tail-up.png)';
+                    this.body[i][3].style.background = 'url(../images/tail-up.png)';
                     this.body[i][3].style.backgroundSize = '88% 100%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 } else if (pseg[0] > segx) {
                     // Right
-                    this.body[i][3].style.background = 'url(images/tail-right.png)';
+                    this.body[i][3].style.background = 'url(../images/tail-right.png)';
                     this.body[i][3].style.backgroundSize = '100% 88%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 } else if (pseg[1] > segy) {
                     // Down
-                    this.body[i][3].style.background = 'url(images/tail-down.png)';
+                    this.body[i][3].style.background = 'url(../images/tail-down.png)';
                     this.body[i][3].style.backgroundSize = '88% 100%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 } else if (pseg[0] < segx) {
                     // Left
-                    this.body[i][3].style.background = 'url(images/tail-left.png)';
+                    this.body[i][3].style.background = 'url(../images/tail-left.png)';
                     this.body[i][3].style.backgroundSize = '100% 88%'
                     this.body[i][3].style.backgroundPosition = 'center'
                 }
@@ -374,19 +374,19 @@ function Snake() {
                     var pseg = this.body[i - 1]; // Prev segment
                     if (pseg[1] < segy) {
                         // Up
-                        this.body[i][3].style.background = 'url(images/tail2-up.png)';
+                        this.body[i][3].style.background = 'url(../images/tail2-up.png)';
                     } else if (pseg[0] > segx) {
                         // Right
-                        this.body[i][3].style.background = 'url(images/tail2-right.png)';
+                        this.body[i][3].style.background = 'url(../images/tail2-right.png)';
                     } else if (pseg[1] > segy) {
                         // Down
-                        this.body[i][3].style.background = 'url(images/tail2-down.png)';
+                        this.body[i][3].style.background = 'url(../images/tail2-down.png)';
                     } else if (pseg[0] < segx) {
                         // Left
-                        this.body[i][3].style.background = 'url(images/tail2-left.png)';
+                        this.body[i][3].style.background = 'url(../images/tail2-left.png)';
                     }
                 } else {
-                    this.body[i][3].style.background = 'url(images/body1.png)';
+                    this.body[i][3].style.background = 'url(../images/body1.png)';
                 }
                 // 设置6种不同的格子间隙效果
                 var pseg = this.body[i - 1]; // Previous segment
@@ -461,7 +461,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][0] = this.body[0][0] + 1;
-                    this.body[0][3].style.background = 'url(images/head-right.png)';
+                    this.body[0][3].style.background = 'url(../images/head-right.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -475,7 +475,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][0] = this.body[0][0] - 1;
-                    this.body[0][3].style.background = 'url(images/head-left.png)';
+                    this.body[0][3].style.background = 'url(../images/head-left.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -489,7 +489,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][1] = this.body[0][1] - 1;
-                    this.body[0][3].style.background = 'url(images/head-up.png)';
+                    this.body[0][3].style.background = 'url(../images/head-up.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -503,7 +503,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][1] = this.body[0][1] + 1;
-                    this.body[0][3].style.background = 'url(images/head-down.png)';
+                    this.body[0][3].style.background = 'url(../images/head-down.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -651,7 +651,7 @@ function Snake() {
                     }
                     this.virtualBody[0][0] = this.virtualBody[0][0] + 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -665,7 +665,7 @@ function Snake() {
                     }
                     this.virtualBody[0][0] = this.virtualBody[0][0] - 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -679,7 +679,7 @@ function Snake() {
                     }
                     this.virtualBody[0][1] = this.virtualBody[0][1] - 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -693,7 +693,7 @@ function Snake() {
                     }
                     this.virtualBody[0][1] = this.virtualBody[0][1] + 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -846,7 +846,7 @@ function Snake() {
         this.virtualBody = this.body.map(item => [...item])
         this.virtualMove(diretArr[0][0])
         if (two && ((Math.abs(this.virtualBody[0][0] - food.x) == 1 && this.virtualBody[0][1] == food.y) || (Math.abs(this.virtualBody[0][1] - food.y) == 1 && this.virtualBody[0][0] == food.x))) {
-            this.virtualBody.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+            this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
         }
         var mapArr = map.initMapArr.map(item => [...item])
         for (var j = 0; j < this.virtualBody.length; j++) {
@@ -889,7 +889,7 @@ function Snake() {
                 gameOver.style.display = 'block';
                 isBegin = false;
                 score.innerHTML = grade;
-                document.all.sound.src = 'music/die.mp3';
+                document.all.sound.src = '../music/die.mp3';
                 //location.replace(location);刷新页面
             }
         }
@@ -901,7 +901,7 @@ function Snake() {
             gameOver.style.display = 'block';
             isBegin = false;
             score.innerHTML = grade;
-            document.all.sound.src = 'music/die.mp3';
+            document.all.sound.src = '../music/die.mp3';
             return;
         } else {
             this.show();//this.show()要放在游戏结束的判断里，当没结束时，就show，当结束，就不执行，不show。因此不会越界。
@@ -924,14 +924,14 @@ function Snake() {
             nextpath = ["R", "L", "U", "D"];
         }
         //吃食物
-        document.all.sound.src = 'music/eat.mp3';
+        document.all.sound.src = '../music/eat.mp3';
         grade++;
-        this.body.unshift([food.x, food.y, 'url(images/head-right.png)', null]);
+        this.body.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
         map._map.removeChild(food._food);
         if (this.body.length != 200) {
             food.show();
         } else {
-            document.all.sound.src = 'music/pass.mp3';
+            document.all.sound.src = '../music/pass.mp3';
             script.style.transform = 'rotateY(360deg)';
             script.innerHTML = '已通关!!!';
             script.disabled = true;
@@ -1055,10 +1055,10 @@ window.onload = function () {
         }, 2000);
     }
     start.onmouseover = function () {
-        this.src = 'images/start-hover.png';
+        this.src = '../images/start-hover.png';
     }
     start.onmouseout = function () {
-        this.src = 'images/start.png';
+        this.src = '../images/start.png';
     }
     setTimeout(function () {
         start.style.display = 'block';

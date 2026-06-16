@@ -167,7 +167,7 @@ p {
     display: inline-block;
     height: 62px;
     width: 90px;
-    background: url(images/score-bg.png);
+    background: url('../images/score-bg.png');
     text-align: center;
     padding-top: 16px;
     color: #DF130A;
@@ -245,7 +245,7 @@ p {
 #gameStart div {
     height: 342px;
     width: 1015px;
-    background: url(images/welcome.png);
+    background: url('../images/welcome.png');
     position: absolute;
     top: 50%;
     left: 50%;
