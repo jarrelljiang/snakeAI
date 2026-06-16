@@ -178,6 +178,7 @@ var grade = 0;  //积分
 var flag = 1;   //（可间接看做）关卡
 var isBegin = false;
 var imageCache = {}; //canvas 绘制使用的图片缓存，避免每帧重复创建 Image。
+var step = 0;
 var uiState = {
     started: false,
     startFading: false,
@@ -415,7 +416,7 @@ function drawCanvasButton(ctx, text, x, y, width, height, options) {
     if (opts.light) {
         createRoundRectPath(ctx, x, y, width, height, [6, 6, 6, 6]);
         ctx.clip();
-        var lightX = x + ((Date.now() / 12) % (width + 100)) - 50;
+        var lightX = x + ((Date.now() / 5) % (width + 100)) - 50;
         ctx.globalAlpha = 0.65;
         ctx.translate(lightX, y + height / 2);
         ctx.rotate(-Math.PI / 4);
@@ -524,7 +525,7 @@ function getLayout() {
     var frameWidth = 946;
     var frameHeight = 501;
     var frameX = (width - frameWidth) / 2;
-    var frameY = Math.max(170, (height - frameHeight) / 2 + 95);
+    var frameY = Math.max(170, (height - frameHeight) / 2 + 55);
     return {
         width: width,
         height: height,
@@ -577,7 +578,7 @@ function drawGameScreen(ctx, layout, alpha) {
     drawImageAsset(ctx, './images/map.png', layout.frameX, layout.frameY, layout.frameWidth, layout.frameHeight, 1);
 
     if (food) {
-        drawTileImage(ctx, './images/body2.png', layout.boardX + food.x * food.width, layout.boardY + food.y * food.height, food.width, food.height);
+        drawTileImage(ctx, './images/food.png', layout.boardX + food.x * food.width, layout.boardY + food.y * food.height, food.width, food.height);
     }
 
     if (snake) {
@@ -749,7 +750,7 @@ function Food() {
     this.width = 40;
     this.height = 40;
     this.position = 'absolute';
-    this.background = 'url(./images/body2.png)';
+    this.background = 'url(./images/food.png)';
     this.x = 0;
     this.y = 0;
     //生成食物
@@ -1259,6 +1260,8 @@ function Snake() {
     //定时器，开始游戏时，调用
     this.speed = function () {
         timer = setInterval(function () {
+            var stepDom = document.getElementById('step');
+            stepDom.innerHTML = ++step;
             this.move();
         }.bind(this), initSpeed);//或者:          timer=setInterval(function(){this.move();}.bind(this),initSpeed);setInterval里面的this指window要bind                           
     }

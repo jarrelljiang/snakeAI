@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>随机安全贪吃蛇 AI Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: #151816;
+            color: #f3f7e9;
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .shell {
+            width: min(980px, 100%);
+        }
+
+        .topbar {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: end;
+            gap: 18px;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            color: #f7d26a;
+            font-size: 28px;
+            letter-spacing: 0;
+        }
+
+        .sub {
+            margin: 0;
+            color: #aab8a1;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(90px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .stat {
+            border: 1px solid rgba(247, 210, 106, 0.28);
+            background: rgba(255, 255, 255, 0.06);
+            padding: 10px 12px;
+            border-radius: 8px;
+        }
+
+        .label {
+            color: #93a38d;
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .value {
+            color: #f7d26a;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 2 / 1;
+            border: 1px solid rgba(247, 210, 106, 0.35);
+            border-radius: 8px;
+            background: #1f2b20;
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        button {
+            border: 1px solid rgba(247, 210, 106, 0.45);
+            background: #f7d26a;
+            color: #1c1f1b;
+            min-height: 38px;
+            padding: 0 14px;
+            border-radius: 7px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: transparent;
+            color: #f7d26a;
+        }
+
+        .note {
+            margin: 12px 0 0;
+            color: #93a38d;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <div class="topbar">
+            <div>
+                <h1>随机安全贪吃蛇 AI</h1>
+                <p class="sub">20 * 10 地图，哈密顿安全兜底 + 随机智能捷径。</p>
+            </div>
+            <div class="actions">
+                <button id="toggle">暂停</button>
+                <button id="restart" class="secondary">重新开始</button>
+            </div>
+        </div>
+
+        <section class="stats">
+            <div class="stat"><span class="label">移动步数</span><span class="value" id="steps">0</span></div>
+            <div class="stat"><span class="label">蛇身长度</span><span class="value" id="length">5</span></div>
+            <div class="stat"><span class="label">当前策略</span><span class="value" id="strategy">-</span></div>
+            <div class="stat"><span class="label">完成度</span><span class="value" id="progress">3%</span></div>
+        </section>
+
+        <canvas id="board" width="900" height="450"></canvas>
+        <p class="note">
+            AI 每一步会枚举所有可走方向，过滤掉会破坏哈密顿安全顺序的移动，再在安全候选中按“接近食物、空间宽裕、路线变化、随机扰动”加权选择。
+        </p>
+    </main>
+
+    <script>
+        const COLS = 20;
+        const ROWS = 10;
+        const TOTAL = COLS * ROWS;
+        const TICK_MS = 22;
+        const START_LENGTH = 5;
+
+        const canvas = document.getElementById('board');
+        const ctx = canvas.getContext('2d');
+        const stepsEl = document.getElementById('steps');
+        const lengthEl = document.getElementById('length');
+        const strategyEl = document.getElementById('strategy');
+        const progressEl = document.getElementById('progress');
+        const toggleBtn = document.getElementById('toggle');
+        const restartBtn = document.getElementById('restart');
+
+        let cycle = [];
+        let order = [];
+        let snake = [];
+        let food = null;
+        let steps = 0;
+        let timer = null;
+        let running = true;
+        let finished = false;
+        let lastStrategy = 'cycle';
+        let lastDirection = null;
+        let recentHeads = [];
+
+        // 生成 20*10 地图上的哈密顿环，作为安全移动的序号系统。
+        function buildHamiltonianCycle() {
+            const result = [];
+            for (let x = 0; x < COLS; x++) {
+                result.push({ x, y: 0 });
+            }
+            for (let y = 1; y < ROWS; y++) {
+                if (y % 2 === 1) {
+                    for (let x = COLS - 1; x >= 1; x--) result.push({ x, y });
+                } else {
+                    for (let x = 1; x < COLS; x++) result.push({ x, y });
+                }
+            }
+            for (let y = ROWS - 1; y >= 1; y--) {
+                result.push({ x: 0, y });
+            }
+            return result;
+        }
+
+        // 建立每个格子到哈密顿环序号的反向索引。
+        function buildOrderMap(path) {
+            const map = Array.from({ length: ROWS }, () => Array(COLS).fill(-1));
+            path.forEach((point, index) => {
+                map[point.y][point.x] = index;
+            });
+            return map;
+        }
+
+        // 初始化一局游戏，蛇身沿哈密顿环排列，保证初始状态安全。
+        function resetGame() {
+            cycle = buildHamiltonianCycle();
+            order = buildOrderMap(cycle);
+            snake = [];
+            for (let i = START_LENGTH - 1; i >= 0; i--) {
+                snake.push({ ...cycle[i] });
+            }
+            food = createFood();
+            steps = 0;
+            finished = false;
+            running = true;
+            lastStrategy = 'cycle';
+            lastDirection = null;
+            recentHeads = [];
+            toggleBtn.textContent = '暂停';
+            syncStats();
+            draw();
+            startTimer();
+        }
+
+        // 生成不在蛇身上的随机食物。
+        function createFood() {
+            const occupied = new Set(snake.map(keyOf));
+            const free = [];
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const point = { x, y };
+                    if (!occupied.has(keyOf(point))) free.push(point);
+                }
+            }
+            if (free.length === 0) return null;
+            return free[Math.floor(Math.random() * free.length)];
+        }
+
+        // 把坐标转换为集合 key。
+        function keyOf(point) {
+            return point.x + ',' + point.y;
+        }
+
+        // 计算从 from 沿哈密顿环前进到 to 的距离。
+        function forwardDistance(fromOrder, toOrder) {
+            return (toOrder - fromOrder + TOTAL) % TOTAL;
+        }
+
+        // 获取蛇头四邻域候选移动。
+        function neighborMoves(head) {
+            return [
+                { x: head.x + 1, y: head.y, dir: 'R' },
+                { x: head.x - 1, y: head.y, dir: 'L' },
+                { x: head.x, y: head.y - 1, dir: 'U' },
+                { x: head.x, y: head.y + 1, dir: 'D' }
+            ].filter(point => point.x >= 0 && point.x < COLS && point.y >= 0 && point.y < ROWS);
+        }
+
+        // 判断一步移动是否仍保持哈密顿安全顺序，不允许蛇头越过尾巴。
+        function isHamiltonianSafeMove(point, willEat) {
+            const headOrder = order[snake[0].y][snake[0].x];
+            const tail = snake[snake.length - 1];
+            const tailOrder = order[tail.y][tail.x];
+            const pointOrder = order[point.y][point.x];
+            const gapToTail = forwardDistance(headOrder, tailOrder);
+            const advance = forwardDistance(headOrder, pointOrder);
+            if (!willEat && point.x === tail.x && point.y === tail.y) return true;
+            return advance > 0 && advance < gapToTail;
+        }
+
+        // 判断候选点是否撞到蛇身；非进食时允许走到当前尾巴。
+        function isBodyBlocked(point, willEat) {
+            const tail = snake[snake.length - 1];
+            return snake.some(segment => {
+                if (!willEat && segment.x === tail.x && segment.y === tail.y) return false;
+                return segment.x === point.x && segment.y === point.y;
+            });
+        }
+
+        // 估算移动后蛇头附近可达空间大小，用作评分，不作为唯一安全依据。
+        function reachableSpaceAfterMove(point, willEat) {
+            const blocked = new Set(snake.map(keyOf));
+            if (!willEat) blocked.delete(keyOf(snake[snake.length - 1]));
+            blocked.delete(keyOf(point));
+            const queue = [point];
+            const seen = new Set([keyOf(point)]);
+            while (queue.length > 0) {
+                const current = queue.shift();
+                for (const next of neighborMoves(current)) {
+                    const key = keyOf(next);
+                    if (!seen.has(key) && !blocked.has(key)) {
+                        seen.add(key);
+                        queue.push(next);
+                    }
+                }
+            }
+            return seen.size;
+        }
+
+        // 给安全候选方向打分，随机性只在安全集合内部发生。
+        function scoreCandidate(point) {
+            const head = snake[0];
+            const willEat = food && point.x === food.x && point.y === food.y;
+            const foodDistance = food ? Math.abs(point.x - food.x) + Math.abs(point.y - food.y) : 0;
+            const headOrder = order[head.y][head.x];
+            const pointOrder = order[point.y][point.x];
+            const foodOrder = food ? order[food.y][food.x] : pointOrder;
+            const cycleFoodDistance = food ? forwardDistance(pointOrder, foodOrder) : 0;
+            const cycleStep = forwardDistance(headOrder, pointOrder);
+            const space = reachableSpaceAfterMove(point, willEat);
+            const repeatPenalty = recentHeads.includes(keyOf(point)) ? 14 : 0;
+            const turnBonus = lastDirection && point.dir !== lastDirection ? 3 : 0;
+            const shortcutBonus = cycleStep > 1 ? 10 + Math.min(cycleStep, 18) * 0.25 : 0;
+            const eatBonus = willEat ? 180 : 0;
+            const randomNoise = Math.random() * 18;
+
+            return eatBonus
+                - foodDistance * 7
+                - cycleFoodDistance * 0.12
+                + Math.min(space, 40) * 0.45
+                + shortcutBonus
+                + turnBonus
+                + randomNoise
+                - repeatPenalty;
+        }
+
+        // 从安全候选中按权重随机选择，避免每局都走同一条路线。
+        function pickWeightedCandidate(candidates) {
+            const ranked = candidates
+                .map(point => ({ point, score: scoreCandidate(point) }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 3);
+            const minScore = Math.min(...ranked.map(item => item.score));
+            const weights = ranked.map(item => Math.exp((item.score - minScore) / 14));
+            const totalWeight = weights.reduce((sum, value) => sum + value, 0);
+            let cursor = Math.random() * totalWeight;
+            for (let i = 0; i < ranked.length; i++) {
+                cursor -= weights[i];
+                if (cursor <= 0) return ranked[i].point;
+            }
+            return ranked[0].point;
+        }
+
+        // 选择下一步：食物在安全前方时允许随机捷径，但禁止越过食物。
+        function chooseNextMove() {
+            const head = snake[0];
+            const headOrder = order[head.y][head.x];
+            const tail = snake[snake.length - 1];
+            const tailOrder = order[tail.y][tail.x];
+            const foodOrder = food ? order[food.y][food.x] : headOrder;
+            const gapToTail = forwardDistance(headOrder, tailOrder);
+            const foodDistance = food ? forwardDistance(headOrder, foodOrder) : 0;
+            const foodIsSafelyAhead = food && foodDistance > 0 && foodDistance < gapToTail;
+            const cycleNext = { ...cycle[(headOrder + 1) % TOTAL], dir: directionBetween(head, cycle[(headOrder + 1) % TOTAL]) };
+
+            if (!foodIsSafelyAhead) {
+                lastStrategy = 'cycle';
+                return cycleNext;
+            }
+
+            const candidates = neighborMoves(head)
+                .filter(point => {
+                    const willEat = food && point.x === food.x && point.y === food.y;
+                    return !isBodyBlocked(point, willEat) && isHamiltonianSafeMove(point, willEat);
+                })
+                .filter(point => forwardDistance(headOrder, order[point.y][point.x]) <= foodDistance);
+
+            if (candidates.length > 0) {
+                const selected = pickWeightedCandidate(candidates);
+                const selectedOrder = order[selected.y][selected.x];
+                lastStrategy = forwardDistance(headOrder, selectedOrder) > 1 ? 'shortcut' : 'cycle';
+                return selected;
+            }
+
+            lastStrategy = 'cycle';
+            return cycleNext;
+        }
+
+        // 根据两个相邻格子推导方向标签。
+        function directionBetween(from, to) {
+            if (to.x > from.x) return 'R';
+            if (to.x < from.x) return 'L';
+            if (to.y > from.y) return 'D';
+            return 'U';
+        }
+
+        // 推进一帧游戏，吃满全图后停止。
+        function stepGame() {
+            if (!running || finished) return;
+
+            const next = chooseNextMove();
+            const ate = food && next.x === food.x && next.y === food.y;
+            snake.unshift({ x: next.x, y: next.y });
+            if (!ate) {
+                snake.pop();
+            } else if (snake.length === TOTAL) {
+                finished = true;
+                running = false;
+                food = null;
+                toggleBtn.textContent = '已完成';
+            } else {
+                food = createFood();
+            }
+
+            steps++;
+            lastDirection = next.dir || directionBetween(snake[1], snake[0]);
+            recentHeads.push(keyOf(snake[0]));
+            if (recentHeads.length > 18) recentHeads.shift();
+
+            syncStats();
+            draw();
+        }
+
+        // 同步顶部实时状态。
+        function syncStats() {
+            stepsEl.textContent = String(steps);
+            lengthEl.textContent = String(snake.length);
+            strategyEl.textContent = finished ? 'full' : lastStrategy;
+            progressEl.textContent = Math.round(snake.length / TOTAL * 100) + '%';
+        }
+
+        // 启动固定频率移动计时器。
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(stepGame, TICK_MS);
+        }
+
+        // 绘制棋盘、蛇、食物和哈密顿安全路径提示。
+        function draw() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const cell = Math.floor(Math.min(width / COLS, height / ROWS));
+            const boardWidth = cell * COLS;
+            const boardHeight = cell * ROWS;
+            const offsetX = (width - boardWidth) / 2;
+            const offsetY = (height - boardHeight) / 2;
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#1f2b20';
+            ctx.fillRect(0, 0, width, height);
+
+            drawGrid(offsetX, offsetY, cell);
+            drawCycleHint(offsetX, offsetY, cell);
+            if (food) drawFood(food, offsetX, offsetY, cell);
+            drawSnake(offsetX, offsetY, cell);
+            if (finished) drawFinished(width, height);
+        }
+
+        // 绘制网格背景。
+        function drawGrid(offsetX, offsetY, cell) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= COLS; x++) {
+                ctx.beginPath();
+                ctx.moveTo(offsetX + x * cell, offsetY);
+                ctx.lineTo(offsetX + x * cell, offsetY + ROWS * cell);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= ROWS; y++) {
+                ctx.beginPath();
+                ctx.moveTo(offsetX, offsetY + y * cell);
+                ctx.lineTo(offsetX + COLS * cell, offsetY + y * cell);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        // 轻微标记哈密顿兜底路径方向，帮助观察安全底座但不喧宾夺主。
+        function drawCycleHint(offsetX, offsetY, cell) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(247,210,106,0.08)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            cycle.forEach((point, index) => {
+                const x = offsetX + point.x * cell + cell / 2;
+                const y = offsetY + point.y * cell + cell / 2;
+                if (index === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.closePath();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制食物。
+        function drawFood(point, offsetX, offsetY, cell) {
+            const x = offsetX + point.x * cell;
+            const y = offsetY + point.y * cell;
+            ctx.save();
+            ctx.fillStyle = '#f05a3b';
+            ctx.beginPath();
+            ctx.arc(x + cell / 2, y + cell / 2, cell * 0.28, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffd3a3';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制蛇身，头部和尾部用不同亮度区分。
+        function drawSnake(offsetX, offsetY, cell) {
+            snake.forEach((segment, index) => {
+                const x = offsetX + segment.x * cell + 2;
+                const y = offsetY + segment.y * cell + 2;
+                const radius = Math.max(5, cell * 0.18);
+                ctx.fillStyle = index === 0 ? '#f7d26a' : colorForBody(index);
+                roundRect(x, y, cell - 4, cell - 4, radius);
+                ctx.fill();
+                if (index === 0) {
+                    ctx.fillStyle = '#1c1f1b';
+                    ctx.beginPath();
+                    ctx.arc(x + cell * 0.62, y + cell * 0.34, 2.4, 0, Math.PI * 2);
+                    ctx.arc(x + cell * 0.62, y + cell * 0.64, 2.4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+        }
+
+        // 根据蛇身位置生成渐变色。
+        function colorForBody(index) {
+            const t = index / Math.max(1, snake.length - 1);
+            const green = Math.round(168 - t * 60);
+            return 'rgb(68,' + green + ',92)';
+        }
+
+        // 绘制圆角矩形路径。
+        function roundRect(x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+        }
+
+        // 绘制吃满全图后的完成提示。
+        function drawFinished(width, height) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#f7d26a';
+            ctx.font = 'bold 42px Microsoft YaHei, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('已吃满全图', width / 2, height / 2);
+            ctx.restore();
+        }
+
+        // 切换自动运行状态。
+        function toggleRunning() {
+            if (finished) return;
+            running = !running;
+            toggleBtn.textContent = running ? '暂停' : '继续';
+        }
+
+        toggleBtn.addEventListener('click', toggleRunning);
+        restartBtn.addEventListener('click', resetGame);
+        resetGame();
+    </script>
+</body>
+</html>
