@@ -5,15 +5,16 @@ const CleanCSS = require('clean-css');
 const { minify: minifyHtml } = require('html-minifier-terser');
 
 const rootDir = __dirname;
-const srcDir = path.join(rootDir, 'src');
+const jsDir = path.join(rootDir, 'js');
+const cssDir = path.join(rootDir, 'css');
 const distDir = path.join(rootDir, 'dist');
 
 // 源文件路径集中管理，避免后续替换引用时写散。
 const paths = {
-    snakeJs: path.join(srcDir, 'snake.js'),
-    bubblyJs: path.join(srcDir, 'bubbly-bg.js'),
-    snakeCss: path.join(srcDir, 'snake.css'),
-    sourceHtml: path.join(srcDir, 'index.html'),
+    snakeJs: path.join(jsDir, 'snake.js'),
+    bubblyJs: path.join(jsDir, 'bubbly-bg.js'),
+    snakeCss: path.join(cssDir, 'snake.css'),
+    sourceHtml: path.join(rootDir, 'index-base.html'),
     outputJs: path.join(distDir, 'all.min.js'),
     outputCss: path.join(distDir, 'all.min.css'),
     outputHtml: path.join(rootDir, 'index.html')
@@ -57,13 +58,20 @@ async function buildCss() {
     await fs.writeFile(paths.outputCss, result.styles, 'utf8');
 }
 
-// 基于 src/index.html 生成根目录 index.html，并把资源引用切到 dist 产物。
+// 基于 index-base.html 的相对路径，生成适用于根目录 index.html 的资源路径。
+function normalizeRootHtmlPaths(html) {
+    return html
+        .replace(/\s*<script\s+src=["'](?:\.\.?\/)?(?:js\/)?snake\.js["']><\/script>\s*/i, '\n    <script src="./dist/all.min.js"></script>\n')
+        .replace(/\s*<script\s+src=["'](?:\.\.?\/)?(?:js\/)?bubbly-bg\.js["']><\/script>\s*/i, '\n')
+        .replace(/href=["'](?:\.\.?\/)?(?:css\/)?snake\.css["']/i, 'href="./dist/all.min.css"')
+        .replace(/(["'])(?:\.\.?\/)?images\//g, '$1./images/')
+        .replace(/(["'])(?:\.\.?\/)?snake\.ico(["'])/g, '$1./snake.ico$2');
+}
+
+// 基于 index-base.html 生成根目录 index.html，并把资源引用切到根目录可访问的产物。
 async function buildHtml() {
     const sourceHtml = await fs.readFile(paths.sourceHtml, 'utf8');
-    const htmlWithDistAssets = sourceHtml
-        .replace(/\s*<script\s+src=["']snake\.js["']><\/script>\s*/i, '\n    <script src="dist/all.min.js"></script>\n')
-        .replace(/\s*<script\s+src=["']bubbly-bg\.js["']><\/script>\s*/i, '\n')
-        .replace(/href=["']snake\.css["']/i, 'href="dist/all.min.css"');
+    const htmlWithDistAssets = normalizeRootHtmlPaths(sourceHtml);
 
     const minifiedHtml = await minifyHtml(htmlWithDistAssets, {
         collapseWhitespace: true,

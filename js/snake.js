@@ -177,13 +177,543 @@ var initSpeed = 30; //初始定时器时间间隔（毫秒）,间接代表蛇移
 var grade = 0;  //积分
 var flag = 1;   //（可间接看做）关卡
 var isBegin = false;
+var imageCache = {}; //canvas 绘制使用的图片缓存，避免每帧重复创建 Image。
+var uiState = {
+    started: false,
+    startFading: false,
+    startFadeTime: 0,
+    bootTime: 0,
+    scoreTop: 0,
+    scoreAnimating: false,
+    scoreAnimationStart: 0,
+    firstScore: 4,
+    secondScore: 4,
+    gameOver: false,
+    gameOverScore: 0,
+    pass: false,
+    startHover: false,
+    hitAreas: {},
+    bubbles: []
+}; //界面状态全部由 canvas 消费，核心蛇逻辑只负责更新游戏数据。
+
+// 生成背景气泡参数，用于替代原 bubbly-bg 生成的额外 DOM canvas。
+function initBubbles() {
+    uiState.bubbles = [];
+    for (var i = 0; i < 18; i++) {
+        uiState.bubbles.push({
+            x: Math.random(),
+            y: Math.random(),
+            r: 8 + Math.random() * 36,
+            speed: 0.15 + Math.random() * 0.45,
+            hue: Math.random() * 50
+        });
+    }
+}
+
+// 播放音效，保留原来的 audio 标签但不依赖 document.all。
+function playSound(src) {
+    var sound = document.getElementById('sound');
+    if (sound) sound.src = src;
+}
+
+// 读取并缓存 canvas 图片，图片加载完成后自动触发一次重绘。
+function getCanvasImage(src) {
+    if (!imageCache[src]) {
+        var img = new Image();
+        imageCache[src] = {
+            img: img,
+            loaded: false
+        };
+        img.onload = function () {
+            imageCache[src].loaded = true;
+            renderGame();
+        };
+        img.src = src;
+    }
+    return imageCache[src];
+}
+
+// 在 canvas 上创建圆角裁剪路径，用来还原原 DOM 蛇身的圆角视觉。
+function createRoundRectPath(ctx, x, y, width, height, radius) {
+    var r = radius || [0, 0, 0, 0];
+    ctx.beginPath();
+    ctx.moveTo(x + r[0], y);
+    ctx.lineTo(x + width - r[1], y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + r[1]);
+    ctx.lineTo(x + width, y + height - r[2]);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - r[2], y + height);
+    ctx.lineTo(x + r[3], y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - r[3]);
+    ctx.lineTo(x, y + r[0]);
+    ctx.quadraticCurveTo(x, y, x + r[0], y);
+    ctx.closePath();
+}
+
+// 绘制单个格子图片，支持旧 DOM 里的 backgroundSize、backgroundPosition 和 borderRadius 效果。
+function drawTileImage(ctx, src, x, y, width, height, options) {
+    var cached = getCanvasImage(src);
+    if (!cached.loaded) return;
+
+    var opts = options || {};
+    var drawWidth = opts.width || width;
+    var drawHeight = opts.height || height;
+    var drawX = x + (opts.offsetX || 0);
+    var drawY = y + (opts.offsetY || 0);
+
+    if (opts.centerX) drawX = x + (width - drawWidth) / 2;
+    if (opts.centerY) drawY = y + (height - drawHeight) / 2;
+
+    ctx.save();
+    if (opts.radius) {
+        createRoundRectPath(ctx, drawX, drawY, drawWidth, drawHeight, opts.radius);
+        ctx.clip();
+    }
+    ctx.drawImage(cached.img, drawX, drawY, drawWidth, drawHeight);
+    ctx.restore();
+}
+
+// 根据蛇身相邻节点计算当前格子应该使用的贴图和绘制参数。
+function getSnakeSegmentPaint(body, index) {
+    var segment = body[index];
+    var segx = segment[0];
+    var segy = segment[1];
+    var tile = 40;
+    var paint = {
+        src: './images/body1.png',
+        width: tile,
+        height: tile
+    };
+
+    if (index == 0) {
+        var nseg = body[index + 1];
+        if (!nseg || segy < nseg[1]) {
+            paint.src = './images/head-up.png';
+            paint.width = tile * 0.88;
+            paint.centerX = true;
+        } else if (segx > nseg[0]) {
+            paint.src = './images/head-right.png';
+            paint.height = tile * 0.88;
+            paint.centerY = true;
+        } else if (segy > nseg[1]) {
+            paint.src = './images/head-down.png';
+            paint.width = tile * 0.88;
+            paint.centerX = true;
+        } else if (segx < nseg[0]) {
+            paint.src = './images/head-left.png';
+            paint.height = tile * 0.88;
+            paint.centerY = true;
+        }
+        return paint;
+    }
+
+    if (index == body.length - 1) {
+        var prevTail = body[index - 1];
+        if (prevTail[1] < segy) {
+            paint.src = './images/tail-up.png';
+            paint.width = tile * 0.88;
+            paint.centerX = true;
+        } else if (prevTail[0] > segx) {
+            paint.src = './images/tail-right.png';
+            paint.height = tile * 0.88;
+            paint.centerY = true;
+        } else if (prevTail[1] > segy) {
+            paint.src = './images/tail-down.png';
+            paint.width = tile * 0.88;
+            paint.centerX = true;
+        } else if (prevTail[0] < segx) {
+            paint.src = './images/tail-left.png';
+            paint.height = tile * 0.88;
+            paint.centerY = true;
+        }
+        return paint;
+    }
+
+    var pseg = body[index - 1];
+    var nseg = body[index + 1];
+    if (index == body.length - 2) {
+        if (pseg[1] < segy) {
+            paint.src = './images/tail2-up.png';
+        } else if (pseg[0] > segx) {
+            paint.src = './images/tail2-right.png';
+        } else if (pseg[1] > segy) {
+            paint.src = './images/tail2-down.png';
+        } else if (pseg[0] < segx) {
+            paint.src = './images/tail2-left.png';
+        }
+    }
+
+    if (pseg[0] < segx && nseg[1] > segy || nseg[0] < segx && pseg[1] > segy) {
+        paint.offsetX = -2.5;
+        paint.offsetY = 2.5;
+        paint.radius = [0, 30, 0, 5];
+    } else if (pseg[1] < segy && nseg[0] < segx || nseg[1] < segy && pseg[0] < segx) {
+        paint.offsetX = -2.5;
+        paint.offsetY = -2.5;
+        paint.radius = [5, 0, 30, 0];
+    } else if (pseg[0] > segx && nseg[1] < segy || nseg[0] > segx && pseg[1] < segy) {
+        paint.offsetX = 2.5;
+        paint.offsetY = -2.5;
+        paint.radius = [0, 5, 0, 30];
+    } else if (pseg[1] > segy && nseg[0] > segx || nseg[1] > segy && pseg[0] > segx) {
+        paint.offsetX = 2.5;
+        paint.offsetY = 2.5;
+        paint.radius = [30, 0, 5, 0];
+    } else if (pseg[0] < segx && nseg[0] > segx || nseg[0] < segx && pseg[0] > segx) {
+        paint.height = tile * 0.88;
+        paint.centerY = true;
+    } else if (pseg[1] < segy && nseg[1] > segy || nseg[1] < segy && pseg[1] > segy) {
+        paint.width = tile * 0.88;
+        paint.centerX = true;
+    }
+
+    return paint;
+}
+
+// 绘制带透明度的图片，图片未加载完成时跳过并等待 onload 重绘。
+function drawImageAsset(ctx, src, x, y, width, height, alpha) {
+    var cached = getCanvasImage(src);
+    if (!cached.loaded) return;
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * (alpha == null ? 1 : alpha);
+    ctx.drawImage(cached.img, x, y, width, height);
+    ctx.restore();
+}
+
+// 以图片中心点为旋转轴绘制图片，用来还原原 DOM transition rotate 效果。
+function drawRotatedImageAsset(ctx, src, x, y, width, height, angle, alpha) {
+    var cached = getCanvasImage(src);
+    if (!cached.loaded) return;
+    ctx.save();
+    ctx.globalAlpha = ctx.globalAlpha * (alpha == null ? 1 : alpha);
+    ctx.translate(x + width / 2, y + height / 2);
+    ctx.rotate(angle);
+    ctx.drawImage(cached.img, -width / 2, -height / 2, width, height);
+    ctx.restore();
+}
+
+// 判断鼠标点击是否落在 canvas 记录的热区里。
+function hitTest(area, x, y) {
+    return area && x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height;
+}
+
+// 绘制圆角按钮，替代原来的 DOM button 和 a.button。
+function drawCanvasButton(ctx, text, x, y, width, height, options) {
+    var opts = options || {};
+    ctx.save();
+    ctx.shadowColor = opts.shadow || 'rgba(200,2,1,0.55)';
+    ctx.shadowBlur = opts.shadowBlur == null ? 10 : opts.shadowBlur;
+    ctx.fillStyle = opts.background || 'rgb(247, 243, 190)';
+    createRoundRectPath(ctx, x, y, width, height, [6, 6, 6, 6]);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = opts.color || 'rgb(200, 2, 1)';
+    ctx.font = opts.font || '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + width / 2, y + height / 2);
+
+    if (opts.light) {
+        createRoundRectPath(ctx, x, y, width, height, [6, 6, 6, 6]);
+        ctx.clip();
+        var lightX = x + ((Date.now() / 12) % (width + 100)) - 50;
+        ctx.globalAlpha = 0.65;
+        ctx.translate(lightX, y + height / 2);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-45, -4, 90, 8);
+    }
+    ctx.restore();
+}
+
+// 绘制分数滚动动画，模拟原 scoreBox top 从 0 到 -32px 的过渡。
+function drawScoreBoard(ctx, x, y) {
+    var progress = 1;
+    if (uiState.scoreAnimating) {
+        progress = Math.min((Date.now() - uiState.scoreAnimationStart) / 1200, 1);
+        if (progress >= 1) {
+            uiState.scoreAnimating = false;
+            uiState.firstScore = uiState.secondScore;
+        }
+    }
+
+    var offsetY = -32 * progress;
+    ctx.save();
+    ctx.font = 'bold 28px Arial';
+    var firstText = String(uiState.firstScore);
+    var secondText = String(uiState.secondScore);
+    var scoreWidth = Math.max(42, Math.ceil(Math.max(ctx.measureText(firstText).width, ctx.measureText(secondText).width)) + 16);
+    createRoundRectPath(ctx, x, y, scoreWidth, 32, [6, 6, 6, 6]);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(252, 183, 2, 0.3)';
+    ctx.fillRect(x, y, scoreWidth, 32);
+    ctx.fillStyle = '#DF130A';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(firstText, x + scoreWidth / 2, y + 17 + offsetY);
+    ctx.fillText(secondText, x + scoreWidth / 2, y + 49 + offsetY);
+    ctx.restore();
+}
+
+// 绘制背景气泡，替代 bubbly-bg 额外插入的背景 canvas。
+function drawBubbleBackground(ctx, width, height) {
+    ctx.fillStyle = '#fff4e6';
+    ctx.fillRect(0, 0, width, height);
+    for (var i = 0; i < uiState.bubbles.length; i++) {
+        var bubble = uiState.bubbles[i];
+        var x = bubble.x * width;
+        var y = (bubble.y * height + Date.now() * bubble.speed / 8) % (height + bubble.r * 2) - bubble.r;
+        ctx.beginPath();
+        ctx.fillStyle = 'hsla(' + bubble.hue + ',100%,50%,.3)';
+        ctx.arc(x, y, bubble.r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+// 用 canvas 粒子模拟原 fireworks.gif，保持固定位置循环爆开。
+function drawCanvasFirework(ctx, x, y, width, height, offset) {
+    var now = Date.now() + offset;
+    var cycle = (now % 1400) / 1400;
+    var centerX = x + width / 2;
+    var centerY = y + height / 2;
+    var colors = ['#df130a', '#ff7a00', '#ffd447', '#fff2a8'];
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    for (var ring = 0; ring < 2; ring++) {
+        var ringProgress = (cycle + ring * 0.35) % 1;
+        var radius = 8 + ringProgress * width * 0.42;
+        var alpha = Math.max(0, 1 - ringProgress);
+        var count = ring == 0 ? 18 : 12;
+
+        for (var i = 0; i < count; i++) {
+            var angle = Math.PI * 2 * i / count + ring * 0.22;
+            var sparkX = centerX + Math.cos(angle) * radius;
+            var sparkY = centerY + Math.sin(angle) * radius * 0.78;
+            var tailX = centerX + Math.cos(angle) * radius * 0.58;
+            var tailY = centerY + Math.sin(angle) * radius * 0.45;
+
+            ctx.globalAlpha = alpha * (ring == 0 ? 0.85 : 0.55);
+            ctx.strokeStyle = colors[(i + ring) % colors.length];
+            ctx.lineWidth = ring == 0 ? 2 : 1.5;
+            ctx.beginPath();
+            ctx.moveTo(tailX, tailY);
+            ctx.lineTo(sparkX, sparkY);
+            ctx.stroke();
+
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = colors[(i + 2) % colors.length];
+            ctx.beginPath();
+            ctx.arc(sparkX, sparkY, ring == 0 ? 2.6 : 1.8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    ctx.globalAlpha = 0.7 + Math.sin(cycle * Math.PI * 2) * 0.25;
+    ctx.fillStyle = '#fff2a8';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
+// 计算画布中各个视觉区域的位置，保持原始页面的大致布局。
+function getLayout() {
+    var width = map && map._map ? map._map.width : window.innerWidth;
+    var height = map && map._map ? map._map.height : window.innerHeight;
+    var frameWidth = 946;
+    var frameHeight = 501;
+    var frameX = (width - frameWidth) / 2;
+    var frameY = Math.max(170, (height - frameHeight) / 2 + 95);
+    return {
+        width: width,
+        height: height,
+        frameX: frameX,
+        frameY: frameY,
+        frameWidth: frameWidth,
+        frameHeight: frameHeight,
+        boardX: frameX + 73,
+        boardY: frameY + 50,
+        welcomeX: (width - 1015) / 2,
+        welcomeY: (height - 342) / 2 - 15
+    };
+}
+
+// 绘制游戏主界面，包括提示、得分、AI按钮、地图、蛇和食物。
+function drawGameScreen(ctx, layout, alpha) {
+    if (!map) return;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#DF130A';
+    ctx.font = 'bold 26px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('按 回车 开始/暂停', layout.width / 2, 60);
+
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#333';
+    ctx.fillText('得分:', layout.width / 2 - 30, 110);
+    drawScoreBoard(ctx, layout.width / 2 + 25, 92);
+
+    var buttonText = uiState.pass ? '已通关!!!' : (isBegin ? '点击暂停' : (snake && snake.direct == null ? '开启AI' : '启动AI'));
+    uiState.hitAreas.aiButton = { x: layout.width / 2 - 60, y: 140, width: 120, height: 40 };
+    drawCanvasButton(ctx, buttonText, uiState.hitAreas.aiButton.x, uiState.hitAreas.aiButton.y, 120, 40, {
+        light: !isBegin && !uiState.pass
+    });
+
+    ctx.save();
+    ctx.translate(layout.frameX + 135, layout.frameY - 10);
+    ctx.rotate(-Math.PI / 6);
+    drawImageAsset(ctx, './images/pic-l.png', -70, -95, 125, 192, 1);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(layout.frameX + layout.frameWidth - 135, layout.frameY - 10);
+    ctx.rotate(Math.PI / 6);
+    drawImageAsset(ctx, './images/pic-r.png', -55, -95, 125, 192, 1);
+    ctx.restore();
+
+    drawImageAsset(ctx, './images/map.png', layout.frameX, layout.frameY, layout.frameWidth, layout.frameHeight, 1);
+
+    if (food) {
+        drawTileImage(ctx, './images/body2.png', layout.boardX + food.x * food.width, layout.boardY + food.y * food.height, food.width, food.height);
+    }
+
+    if (snake) {
+        for (var i = snake.body.length - 1; i >= 0; i--) {
+            var segment = snake.body[i];
+            var paint = getSnakeSegmentPaint(snake.body, i);
+            drawTileImage(ctx, paint.src, layout.boardX + segment[0] * snake.width, layout.boardY + segment[1] * snake.height, snake.width, snake.height, paint);
+        }
+    }
+
+    if (map.highlightPoint) {
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        createRoundRectPath(ctx, layout.boardX + map.highlightPoint[0] * 40, layout.boardY + map.highlightPoint[1] * 40, 40, 40, [10, 10, 10, 10]);
+        ctx.fill();
+    }
+
+    if (!isBegin && snake && snake.direct != null && !uiState.gameOver) {
+        ctx.fillStyle = '#DF130A';
+        ctx.font = 'bold 50px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Paused...', layout.width / 2, layout.frameY + 235);
+    }
+    ctx.restore();
+}
+
+// 绘制开始页，并保留原版本里文字飞入和 start 缩放的流程感。
+function drawStartScreen(ctx, layout) {
+    if (uiState.started && !uiState.startFading) return;
+
+    var now = Date.now();
+    var bootElapsed = now - uiState.bootTime;
+    var fadeProgress = uiState.startFading ? Math.min((now - uiState.startFadeTime) / 2000, 1) : 0;
+    var alpha = uiState.startFading ? 1 - fadeProgress : 1;
+
+    if (uiState.startFading && fadeProgress >= 1) {
+        uiState.started = true;
+        uiState.startFading = false;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    drawImageAsset(ctx, './images/welcome.png', layout.welcomeX, layout.welcomeY, 1015, 342, 1);
+    drawCanvasFirework(ctx, layout.welcomeX + 205, layout.welcomeY + 95, 125, 150, 0);
+    drawCanvasFirework(ctx, layout.welcomeX + 645, layout.welcomeY + 95, 125, 150, 520);
+
+    var textProgress = Math.min(bootElapsed / 1350, 1);
+    var chiProgress = Math.min(bootElapsed / 1000, 1);
+    var tanRotation = textProgress * Math.PI * 20;
+    var chiRotation = chiProgress * Math.PI * 6;
+    var sheRotation = textProgress * Math.PI * 20;
+    drawRotatedImageAsset(ctx, './images/tan.png', layout.welcomeX - 562 + (862 * textProgress), layout.welcomeY + 30, 130, 130, tanRotation, 1);
+    drawRotatedImageAsset(ctx, './images/chi.png', layout.welcomeX + 405, layout.welcomeY - 515 + (516 * chiProgress), 160, 160, chiRotation, 1);
+    drawRotatedImageAsset(ctx, './images/she.png', layout.welcomeX + 1577 - (1037 * textProgress), layout.welcomeY + 34, 130, 130, sheRotation, 1);
+
+    var startDelay = Math.max(bootElapsed - 1600, 0);
+    var startProgress = Math.min(startDelay / 700, 1);
+    var startScale = 3 - 2 * startProgress;
+    var startAlpha = startProgress;
+    var startWidth = 200 * startScale;
+    var startHeight = 111 * startScale;
+    var startX = layout.welcomeX + 380 + (200 - startWidth) / 2;
+    var startY = layout.welcomeY + 342 - 60 - startHeight;
+    uiState.hitAreas.startButton = { x: layout.welcomeX + 380, y: layout.welcomeY + 171, width: 200, height: 111 };
+    drawImageAsset(ctx, uiState.startHover ? './images/start-hover.png' : './images/start.png', startX, startY, startWidth, startHeight, startAlpha);
+    ctx.restore();
+}
+
+// 绘制 Game Over 弹窗，替代原来的遮罩和 p/a 结构。
+function drawGameOver(ctx, layout) {
+    if (!uiState.gameOver) return;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(85,85,85,0.7)';
+    ctx.fillRect(0, 0, layout.width, layout.height);
+    var modalX = layout.width * 0.38;
+    var modalY = 200;
+    var modalWidth = 300;
+    var modalHeight = 376;
+    ctx.fillStyle = '#fff';
+    createRoundRectPath(ctx, modalX, modalY, modalWidth, modalHeight, [10, 10, 10, 10]);
+    ctx.fill();
+    ctx.strokeStyle = '#edcf72';
+    ctx.stroke();
+
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Game Over!', modalX + modalWidth / 2, modalY + 45);
+    drawImageAsset(ctx, './images/cry.gif', modalX + 100, modalY + 85, 100, 100, 1);
+    ctx.font = 'bold 34px Arial';
+    ctx.fillText('本次得分:', modalX + 130, modalY + 215);
+    drawImageAsset(ctx, './images/score-bg.png', modalX + 186, modalY + 184, 90, 78, 1);
+    ctx.fillStyle = '#DF130A';
+    ctx.font = 'bold 38px Arial';
+    ctx.fillText(String(uiState.gameOverScore), modalX + 231, modalY + 225);
+
+    uiState.hitAreas.tryAgain = { x: modalX + 88, y: modalY + 292, width: 124, height: 54 };
+    drawCanvasButton(ctx, 'Try again!', uiState.hitAreas.tryAgain.x, uiState.hitAreas.tryAgain.y, 124, 54, {
+        background: '#9f8b77',
+        color: '#fff',
+        shadow: 'transparent',
+        shadowBlur: 0,
+        font: 'bold 22px Arial'
+    });
+    ctx.restore();
+}
+
+// 单一入口负责绘制整个页面，保证 body 中不再需要其他展示型 DOM。
+function renderGame() {
+    if (!map || !map.ctx) return;
+    var ctx = map.ctx;
+    var layout = getLayout();
+    uiState.hitAreas = {};
+    drawBubbleBackground(ctx, layout.width, layout.height);
+
+    var gameAlpha = uiState.started ? 1 : (uiState.startFading ? Math.min((Date.now() - uiState.startFadeTime) / 2000, 1) : 0);
+    drawGameScreen(ctx, layout, gameAlpha);
+    drawStartScreen(ctx, layout);
+    drawGameOver(ctx, layout);
+}
+
+// 持续刷新 canvas，用于背景、开始页动画和按钮扫光效果。
+function startRenderLoop() {
+    renderGame();
+    requestAnimationFrame(startRenderLoop);
+}
 //地图类
 function Map() {
     this.width = 800;
     this.height = 400;
     this.position = 'relative';
     this._map = null;
-    this.map1 = null;
+    this.ctx = null;
+    this.highlightPoint = null;
     this.initMapArr = []
     //生成地图
     this.show = function () {
@@ -194,23 +724,24 @@ function Map() {
             }
         }
 
-        this._map = document.createElement('div');
-        this._map.id = "bodyMap";
-        this.map1 = document.createElement('div');
-        this.map1.style.width = 946 + 'px';
-        this.map1.style.height = 501 + 'px';
-        this.map1.style.backgroundImage = 'url(../images/map.png)';
-        this._map.style.position = 'absolute';
-        this._map.style.width = this.width + 'px';
-        this._map.style.height = this.height + 'px';
-        this._map.style.top = '50px';
-        this._map.style.left = '73px';
-        this.map1.style.position = this.position;
-        this.map1.style.margin = '0 auto';
-        document.body.appendChild(this.map1);
-        this.map1.style.opacity=0;
-        this.map1.style.transition='2s';
-        this.map1.appendChild(this._map);
+        this._map = document.getElementById('gameCanvas');
+        this.resize();
+        this.ctx = this._map.getContext('2d');
+        this.drawScene();
+    }
+    //重绘完整游戏画面，蛇、食物、通关高亮都统一走 canvas。
+    this.drawScene = function () {
+        renderGame();
+    }
+    //同步 canvas 像素尺寸和视口尺寸，避免绘制被浏览器拉伸。
+    this.resize = function () {
+        this._map.width = window.innerWidth;
+        this._map.height = window.innerHeight;
+    }
+    //设置通关动画高亮格子，传空值时清除高亮。
+    this.setHighlight = function (point) {
+        this.highlightPoint = point;
+        this.drawScene();
     }
 }
 //食物类
@@ -218,18 +749,11 @@ function Food() {
     this.width = 40;
     this.height = 40;
     this.position = 'absolute';
-    this.background = 'url(../images/body2.png)';
+    this.background = 'url(./images/body2.png)';
     this.x = 0;
     this.y = 0;
-    this._food;
     //生成食物
     this.show = function () {
-        this._food = document.createElement('div');
-        this._food.style.width = this.width + 'px';
-        this._food.style.height = this.height + 'px';
-        this._food.style.position = this.position;
-        this._food.style.background = this.background;
-        this._food.style.backgroundSize = '100%';
         this.x = Math.floor(Math.random() * map.width / this.width);
         this.y = Math.floor(Math.random() * map.height / this.width);
         //新生成的食物不能出现在蛇身(可以利用后面不能撞到蛇身的方法，更简单)(这种方法到后期蛇占据地图很多的时候不行，概率会很低，性能差)
@@ -256,31 +780,8 @@ function Food() {
         var randomIndex = Math.floor(Math.random() * availableArr.length)
         this.x = availableArr[randomIndex][0]
         this.y = availableArr[randomIndex][1]
-        this._food.style.left = this.x * this.width;
-        this._food.style.top = this.y * this.height;
-        map._map.appendChild(this._food);
+        map.drawScene();
         //console.log(this.x, this.y)
-        /* arrx = [];//蛇身所有点的x坐标
-        arry = [];//蛇身所有点的y坐标
-        for (var i = 0; i < snake.body.length; i++) {
-            arrx.push(snake.body[i][0]);
-        }
-        while (true) {
-            for (var i = 0; i < arrx.length; i++) {
-                if (arrx[i] == this.x) {
-                    arry.push(snake.body[i][1]);
-                }
-            }
-            if (arry.indexOf(this.y) != -1) {
-                this.x = Math.floor(Math.random() * map.width / this.width);
-                this.y = Math.floor(Math.random() * map.height / this.width);
-            } else {
-                this._food.style.left = this.x * this.width;
-                this._food.style.top = this.y * this.height;
-                map._map.appendChild(this._food);
-                break;
-            }
-        } */
     }
 }
 //蛇类
@@ -294,136 +795,18 @@ function Snake() {
     //初始蛇身
     //这里的null是蛇身的dom元素，先用null表示，后面会创建实际的dom元素插入视图
     this.body = new Array(
-        [4, 2, 'url(../images/head-right.png)', null],//蛇头
-        [3, 2, 'url(../images/body1.png)', null],
-        [2, 2, 'url(../images/tail2-right.png)', null],
-        [1, 2, 'url(../images/tail-right.png)', null]
+        [4, 2, 'url(./images/head-right.png)', null],//蛇头
+        [3, 2, 'url(./images/body1.png)', null],
+        [2, 2, 'url(./images/tail2-right.png)', null],
+        [1, 2, 'url(./images/tail-right.png)', null]
     );
     //生成蛇身
     this.show = function () {
-        for (var i = 0; i < this.body.length; i++) {
-            if (this.body[i][3] == null) {
-                this.body[i][3] = document.createElement('div');
-                this.body[i][3].style.width = this.width;
-                this.body[i][3].style.height = this.height;
-                this.body[i][3].style.position = this.position;
-                this.body[this.body.length - 2][2] = 'url(../images/tail2-right.png)';
-                this.body[this.body.length - 3][2] = 'url(../images/body1.png)';
-                this.body[i][3].style.background = this.body[i][2];
-                map._map.appendChild(this.body[i][3]);
-            }
-            this.body[i][3].style.left = this.body[i][0] * this.width + 'px';
-            this.body[i][3].style.top = this.body[i][1] * this.height + 'px';
+        if (this.body.length >= 3) {
+            this.body[this.body.length - 2][2] = 'url(./images/tail2-right.png)';
+            this.body[this.body.length - 3][2] = 'url(./images/body1.png)';
         }
-        for (var i = 0; i < this.body.length; i++) {
-            var segment = this.body[i];
-            var segx = segment[0];
-            var segy = segment[1];
-
-            if (i == 0) {
-                // Head; Determine the correct image
-                var nseg = this.body[i + 1]; // Next segment
-                if (segy < nseg[1]) {
-                    // Up
-                    this.body[i][3].style.background = 'url(../images/head-up.png)';
-                    this.body[i][3].style.backgroundSize = '88% 100%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                } else if (segx > nseg[0]) {
-                    // Right
-                    this.body[i][3].style.background = 'url(../images/head-right.png)';
-                    this.body[i][3].style.backgroundSize = '100% 88%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                } else if (segy > nseg[1]) {
-                    // Down
-                    this.body[i][3].style.background = 'url(../images/head-down.png)';
-                    this.body[i][3].style.backgroundSize = '88% 100%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                } else if (segx < nseg[0]) {
-                    // Left
-                    this.body[i][3].style.background = 'url(../images/head-left.png)';
-                    this.body[i][3].style.backgroundSize = '100% 88%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                }
-            } else if (i == this.body.length - 1) {
-                // last Tail; Determine the correct image
-                var pseg = this.body[i - 1]; // Prev segment
-                if (pseg[1] < segy) {
-                    // Up
-                    this.body[i][3].style.background = 'url(../images/tail-up.png)';
-                    this.body[i][3].style.backgroundSize = '88% 100%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                } else if (pseg[0] > segx) {
-                    // Right
-                    this.body[i][3].style.background = 'url(../images/tail-right.png)';
-                    this.body[i][3].style.backgroundSize = '100% 88%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                } else if (pseg[1] > segy) {
-                    // Down
-                    this.body[i][3].style.background = 'url(../images/tail-down.png)';
-                    this.body[i][3].style.backgroundSize = '88% 100%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                } else if (pseg[0] < segx) {
-                    // Left
-                    this.body[i][3].style.background = 'url(../images/tail-left.png)';
-                    this.body[i][3].style.backgroundSize = '100% 88%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                }
-            } else {
-                if (i == this.body.length - 2) {
-                    // second Tail; Determine the correct image
-                    var pseg = this.body[i - 1]; // Prev segment
-                    if (pseg[1] < segy) {
-                        // Up
-                        this.body[i][3].style.background = 'url(../images/tail2-up.png)';
-                    } else if (pseg[0] > segx) {
-                        // Right
-                        this.body[i][3].style.background = 'url(../images/tail2-right.png)';
-                    } else if (pseg[1] > segy) {
-                        // Down
-                        this.body[i][3].style.background = 'url(../images/tail2-down.png)';
-                    } else if (pseg[0] < segx) {
-                        // Left
-                        this.body[i][3].style.background = 'url(../images/tail2-left.png)';
-                    }
-                } else {
-                    this.body[i][3].style.background = 'url(../images/body1.png)';
-                }
-                // 设置6种不同的格子间隙效果
-                var pseg = this.body[i - 1]; // Previous segment
-                var nseg = this.body[i + 1]; // Next segment
-                if (pseg[0] < segx && nseg[1] > segy || nseg[0] < segx && pseg[1] > segy) {
-                    // Angle Left-Down
-                    this.body[i][3].style.backgroundSize = '100%'
-                    this.body[i][3].style.backgroundPosition = '-2.5px 2.5px'
-                    this.body[i][3].style.borderRadius = '0 30px 0 5px'
-                } else if (pseg[1] < segy && nseg[0] < segx || nseg[1] < segy && pseg[0] < segx) {
-                    // Angle Up-Left
-                    this.body[i][3].style.backgroundSize = '100%'
-                    this.body[i][3].style.backgroundPosition = '-2.5px -2.5px'
-                    this.body[i][3].style.borderRadius = '5px 0 30px 0'
-                } else if (pseg[0] > segx && nseg[1] < segy || nseg[0] > segx && pseg[1] < segy) {
-                    // Angle Right-Up
-                    this.body[i][3].style.backgroundSize = '100%'
-                    this.body[i][3].style.backgroundPosition = '2.5px -2.5px'
-                    this.body[i][3].style.borderRadius = '0 5px 0 30px'
-                } else if (pseg[1] > segy && nseg[0] > segx || nseg[1] > segy && pseg[0] > segx) {
-                    // Angle Down-Right
-                    this.body[i][3].style.backgroundSize = '100%'
-                    this.body[i][3].style.backgroundPosition = '2.5px 2.5px'
-                    this.body[i][3].style.borderRadius = '30px 0 5px 0'
-                } else if (pseg[0] < segx && nseg[0] > segx || nseg[0] < segx && pseg[0] > segx) {
-                    // Horizontal Left-Right
-                    this.body[i][3].style.backgroundSize = '100% 88%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                    this.body[i][3].style.borderRadius = 0
-                } else if (pseg[1] < segy && nseg[1] > segy || nseg[1] < segy && pseg[1] > segy) {
-                    // Vertical Up-Down
-                    this.body[i][3].style.backgroundSize = '88% 100%'
-                    this.body[i][3].style.backgroundPosition = 'center'
-                    this.body[i][3].style.borderRadius = 0
-                }
-            }
-        }
+        map.drawScene();
     }
     //控制蛇移动
     this.move = function () {
@@ -461,7 +844,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][0] = this.body[0][0] + 1;
-                    this.body[0][3].style.background = 'url(../images/head-right.png)';
+                    this.body[0][2] = 'url(./images/head-right.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -475,7 +858,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][0] = this.body[0][0] - 1;
-                    this.body[0][3].style.background = 'url(../images/head-left.png)';
+                    this.body[0][2] = 'url(./images/head-left.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -489,7 +872,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][1] = this.body[0][1] - 1;
-                    this.body[0][3].style.background = 'url(../images/head-up.png)';
+                    this.body[0][2] = 'url(./images/head-up.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -503,7 +886,7 @@ function Snake() {
                         this.body[i][1] = this.body[i - 1][1];
                     }
                     this.body[0][1] = this.body[0][1] + 1;
-                    this.body[0][3].style.background = 'url(../images/head-down.png)';
+                    this.body[0][2] = 'url(./images/head-down.png)';
                 } else {
                     this.eatFoodHandle()
                 }
@@ -651,7 +1034,7 @@ function Snake() {
                     }
                     this.virtualBody[0][0] = this.virtualBody[0][0] + 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(./images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -665,7 +1048,7 @@ function Snake() {
                     }
                     this.virtualBody[0][0] = this.virtualBody[0][0] - 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(./images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -679,7 +1062,7 @@ function Snake() {
                     }
                     this.virtualBody[0][1] = this.virtualBody[0][1] - 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(./images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -693,7 +1076,7 @@ function Snake() {
                     }
                     this.virtualBody[0][1] = this.virtualBody[0][1] + 1;
                 } else {
-                    this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
+                    this.virtualBody.unshift([food.x, food.y, 'url(./images/head-right.png)', null]);
                     this.virtualSnakeHasEat = true
                 }
                 break;
@@ -846,7 +1229,7 @@ function Snake() {
         this.virtualBody = this.body.map(item => [...item])
         this.virtualMove(diretArr[0][0])
         if (two && ((Math.abs(this.virtualBody[0][0] - food.x) == 1 && this.virtualBody[0][1] == food.y) || (Math.abs(this.virtualBody[0][1] - food.y) == 1 && this.virtualBody[0][0] == food.x))) {
-            this.virtualBody.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
+            this.virtualBody.unshift([food.x, food.y, 'url(./images/head-right.png)', null]);
         }
         var mapArr = map.initMapArr.map(item => [...item])
         for (var j = 0; j < this.virtualBody.length; j++) {
@@ -886,22 +1269,24 @@ function Snake() {
         for (var i = 1; i < this.body.length; i++) {
             if (this.body[0][0] == this.body[i][0] && this.body[0][1] == this.body[i][1]) {
                 clearInterval(timer);
-                gameOver.style.display = 'block';
+                uiState.gameOver = true;
+                uiState.gameOverScore = grade;
                 isBegin = false;
-                score.innerHTML = grade;
-                document.all.sound.src = '../music/die.mp3';
+                playSound('./music/die.mp3');
+                renderGame();
                 //location.replace(location);刷新页面
             }
         }
         //解决撞到自身还继续移动的bug,因为下面的this.show()只写在了判断是否撞墙的else里面，没写在判断是否撞到自身的else里面。
-        if (getComputedStyle(gameOver).display == 'block') { clearInterval(timer); return; }
+        if (uiState.gameOver) { clearInterval(timer); return; }
         //判断是否撞墙
         if (this.body[0][0] < 0 || this.body[0][0] >= map.width / this.width || this.body[0][1] < 0 || this.body[0][1] >= map.height / this.height) {
             clearInterval(timer);
-            gameOver.style.display = 'block';
+            uiState.gameOver = true;
+            uiState.gameOverScore = grade;
             isBegin = false;
-            score.innerHTML = grade;
-            document.all.sound.src = '../music/die.mp3';
+            playSound('./music/die.mp3');
+            renderGame();
             return;
         } else {
             this.show();//this.show()要放在游戏结束的判断里，当没结束时，就show，当结束，就不执行，不show。因此不会越界。
@@ -924,81 +1309,65 @@ function Snake() {
             nextpath = ["R", "L", "U", "D"];
         }
         //吃食物
-        document.all.sound.src = '../music/eat.mp3';
+        playSound('./music/eat.mp3');
         grade++;
-        this.body.unshift([food.x, food.y, 'url(../images/head-right.png)', null]);
-        map._map.removeChild(food._food);
+        this.body.unshift([food.x, food.y, 'url(./images/head-right.png)', null]);
         if (this.body.length != 200) {
             food.show();
         } else {
-            document.all.sound.src = '../music/pass.mp3';
-            script.style.transform = 'rotateY(360deg)';
-            script.innerHTML = '已通关!!!';
-            script.disabled = true;
-            script.style.cursor = 'default';
+            playSound('./music/pass.mp3');
+            uiState.pass = true;
             clearInterval(timer);
-            var shade = document.createElement('div')
-            shade.style.width = '40px'
-            shade.style.height = '40px'
-            shade.style.borderRadius = '10px'
-            shade.style.position = 'absolute'
-            shade.style.background = 'rgba(255,255,255,0.7)'
-            map._map.appendChild(shade)
             var arr = this.body.map(item=>[...item]).reverse()
             for (let i = 0; i < arr.length; i++) {
                 setTimeout(function () {
-                    shade.style.top = arr[i][1] * 40 + 'px'
-                    shade.style.left = arr[i][0] * 40 + 'px'
+                    map.setHighlight(arr[i]);
                 }, (i + 1) * 15)
             }
             setTimeout(function () {
-                map._map.removeChild(shade)
+                map.setHighlight(null);
             }, (arr.length + 1) * 15)
         }
 
-        //计分器效果（解决了当两次吃食物的间隔很小时(小于计分器变化的时间间隔)出现的问题）（轮播也可以用这个方法）
-        if (getComputedStyle(scoreBox).top == '-28px') {
-            scoreBox.style.transition = '0s';
-            scoreBox.style.top = '0px';
-            first.innerHTML = second.innerHTML;
+        //计分器效果：动画中连续加分只更新目标数字，不重启动画。
+        if (!uiState.scoreAnimating) {
+            uiState.firstScore = uiState.secondScore;
+            uiState.scoreAnimating = true;
+            uiState.scoreAnimationStart = Date.now();
         }
-        setTimeout(function () {
-            second.innerHTML = parseInt(second.innerHTML) + 1;
-            scoreBox.style.transition = '1.2s';
-            scoreBox.style.top = '-28px';
-        })
+        uiState.secondScore = uiState.secondScore + 1;
+        renderGame();
     }
+}
+
+// 启动或暂停游戏，复用原来回车键和“开启AI”按钮的业务流程。
+function toggleRunState() {
+    if (!uiState.started || uiState.startFading || uiState.gameOver) return;
+    if (snake.body.length == 200) location.reload();
+    if (isBegin == false) {
+        if (snake.direct == null) {
+            snake.direct = 'R';
+            snake.speed();
+        }
+        if (timer == null) {
+            timer = setInterval(function(){snake.move()}, initSpeed);
+            document.title = '贪吃蛇';
+        }
+        isBegin = true;
+    } else {
+        clearInterval(timer);
+        timer = null;
+        isBegin = false;
+        document.title = '贪吃蛇-暂停中···';
+    }
+    renderGame();
 }
 
 document.onkeydown = function (event) {
     //按下回车键，开始/暂停游戏
-    if (getComputedStyle(gameStart).display == 'none' && getComputedStyle(gameOver).display == 'none') {
+    if (uiState.started && !uiState.startFading && !uiState.gameOver) {
         if (event.keyCode == 13) {
-            if (snake.body.length == 200) location.reload();
-            if (isBegin == false) {
-                if (snake.direct == null) {
-                    snake.direct = 'R';
-                    snake.speed();
-                    script.innerHTML = '点击暂停'
-                    script.className = ''
-                }
-                if (timer == null) {
-                    timer = setInterval(function(){snake.move()}, initSpeed);
-                    document.title = '贪吃蛇';
-                    script.innerHTML = '点击暂停'
-                    script.className = ''
-                    paused.style.display = 'none';
-                }
-                isBegin = true;
-            } else {
-                clearInterval(timer);
-                timer = null;
-                isBegin = false;
-                document.title = '贪吃蛇-暂停中···';
-                script.innerHTML = '启动AI'
-                script.className = 'light'
-                paused.style.display = 'block';
-            }
+            toggleRunState();
         }
     }
     //控制方向（通过判断第一个div和第二个div的left或top是不是相等来控制移动的方向）
@@ -1042,56 +1411,49 @@ document.onkeydown = function (event) {
 }
 //自动加载游戏
 window.onload = function () {
-    start.onclick = function () {
-        footer.style.right=0;
-        gameStart.style.opacity = 0;
-        message.style.opacity = 1;
-        h2.style.opacity = 1;
-        buttonDiv.style.opacity = 1;
-        img.style.opacity = 1;
-        map.map1.style.opacity = 1;
-        setTimeout(function () {
-            gameStart.style.display = 'none';
-        }, 2000);
-    }
-    start.onmouseover = function () {
-        this.src = '../images/start-hover.png';
-    }
-    start.onmouseout = function () {
-        this.src = '../images/start.png';
-    }
-    setTimeout(function () {
-        start.style.display = 'block';
-        start.style.opacity = 1;
-        start.style.transform = 'scale(1)';
-    }, 2300);
-    setTimeout(function () {
-        tan.style.left = '300px';
-        tan.style.transform = 'rotate(3600deg)';
-    }, 50);
-    setTimeout(function () {
-        chi.style.top = '6px';
-        chi.style.transform = 'rotate(1080deg)';
-    }, 50);
-    setTimeout(function () {
-        she.style.right = '345px';
-        she.style.transform = 'rotate(3600deg)';
-    }, 50);
-    bubbly({
-        colorStart: "#fff4e6",
-        colorStop: "#ffe9e4",
-        blur: 1,
-        compose: "source-over",
-        bubbleFunc: () => `hsla(${Math.random() * 50}, 100%, 50%, .3)`
-    })
+    uiState.bootTime = Date.now();
+    initBubbles();
     map = new Map();
     map.show();
     snake = new Snake();
     snake.show();
     food = new Food();
     food.show(); //一定要把snake=new Snake()定义在food.show()的前面，前面要在food里面拿snake里面body的值，如果不定义在前面就拿不到。
-    script.onclick = function () {
-        initSpeed = 30
-        fireKeyEvent(document.documentElement, 'keydown', 13);
-    }
+    startRenderLoop();
+
+    // 视口变化时同步 canvas 尺寸，保持绘制坐标和点击热区一致。
+    window.onresize = function () {
+        map.resize();
+        renderGame();
+    };
+
+    map._map.onmousemove = function (event) {
+        var rect = map._map.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+        uiState.startHover = hitTest(uiState.hitAreas.startButton, x, y);
+        map._map.style.cursor = uiState.startHover || hitTest(uiState.hitAreas.aiButton, x, y) || hitTest(uiState.hitAreas.tryAgain, x, y) ? 'pointer' : 'default';
+    };
+
+    map._map.onclick = function (event) {
+        var rect = map._map.getBoundingClientRect();
+        var x = event.clientX - rect.left;
+        var y = event.clientY - rect.top;
+
+        if (!uiState.started && !uiState.startFading && hitTest(uiState.hitAreas.startButton, x, y)) {
+            uiState.startFading = true;
+            uiState.startFadeTime = Date.now();
+            return;
+        }
+
+        if (uiState.gameOver && hitTest(uiState.hitAreas.tryAgain, x, y)) {
+            location.reload();
+            return;
+        }
+
+        if (hitTest(uiState.hitAreas.aiButton, x, y)) {
+            initSpeed = 30;
+            toggleRunState();
+        }
+    };
 }
