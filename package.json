@@ -5,6 +5,7 @@
   "main": "snake.js",
   "scripts": {
     "compress": "node compress.js",
+    "verify": "node verify.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

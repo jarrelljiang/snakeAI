@@ -131,12 +131,15 @@ function BFS(map, startArr, endArr, farDiret, isMovetoTail, isMovetoFood) {
 //DFS搜索最长路径
 var total = 0
 var max = []
+var dfsMaxReachable = 0
+var dfsPath = [] //DFS 当前递归路径，避免每个节点都拼接字符串。
 var next = [[0, 1], [1, 0], [0, -1], [-1, 0]]//右下左上
 var d = ['R', 'D', 'L', 'U']
-function DFS(map, startArr, endArr, diret) {
+function DFS(map, startY, startX, endY, endX, depth, remaining) {
     total++
-    var t = []//下一步的坐标
-    if (startArr[0] == endArr[0] && startArr[1] == endArr[1]) {//是否到达终点
+    if (max[0] && depth + remaining < max[0].length) return
+    if (startY == endY && startX == endX) {//是否到达终点
+        var diret = dfsPath.slice(0, depth).join('')
         if (max.length == 0 || diret.length >= max[0].length) {
             if (max.length == 0 || diret.length > max[0].length) {
                 max = []
@@ -154,15 +157,16 @@ function DFS(map, startArr, endArr, diret) {
     //枚举4个方向的走法
     for (var k = 0; k < 4; k++) {
         if (total > 1000000) break;
-        t[0] = startArr[0] + next[k][0]
-        t[1] = startArr[1] + next[k][1]
-        if (t[0] < 0 || t[0] > map.length - 1 || t[0] < 0 || t[1] > map[0].length - 1) {//越界
+        var nextY = startY + next[k][0]
+        var nextX = startX + next[k][1]
+        if (nextY < 0 || nextY > map.length - 1 || nextX < 0 || nextX > map[0].length - 1) {//越界
             continue;
         }
-        if (map[t[0]][t[1]] == 0) {
-            map[t[0]][t[1]] = 1//标记走过
-            DFS(map, [t[0], t[1]], endArr, diret + d[k]);
-            map[t[0]][t[1]] = 0//一个方向尝试结束后取消标记
+        if (map[nextY][nextX] == 0) {
+            map[nextY][nextX] = 1//标记走过
+            dfsPath[depth] = d[k]
+            DFS(map, nextY, nextX, endY, endX, depth + 1, remaining - 1);
+            map[nextY][nextX] = 0//一个方向尝试结束后取消标记
         }
     }
     return
@@ -895,7 +899,7 @@ function Snake() {
         }
         this.condition();
     }
-    this.shortestMovetoFood = function (isBFS) {
+    this.shortestMovetoFood = function () {
         this.virtualSnakeHasEat = false
         //外挂逻辑
         var mapArr1 = map.initMapArr.map(item => [...item])//复制数组
@@ -913,11 +917,7 @@ function Snake() {
             if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheMinPath
                 //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
                 if (this.movetoFoodWillLonely(cacheMinPath)) {
-                    if (isBFS) {
-                        this.dfsLongestToTail()
-                    } else {
-                        this.moveToTail();
-                    }
+                    this.moveToTail();
                 } else {
                     //!!!console.log('虚拟蛇走最短路径' + cacheMinPath[0] + '吃完食物后蛇头和蛇尾能连通')
                     this.direct = cacheMinPath[0][0]
@@ -934,28 +934,16 @@ function Snake() {
                         this.direct = cacheMinPath[1][0]
                     } else {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
                         //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
-                        if (isBFS) {
-                            this.dfsLongestToTail()
-                        } else {
-                            this.moveToTail();
-                        }
+                        this.moveToTail();
                     }
                 } else {//cacheMinPath[1]不存在，直接按照最远路径去找蛇尾吧
                     //console.log('cacheMinPath[1]不存在')
-                    if (isBFS) {
-                        this.dfsLongestToTail()
-                    } else {
-                        this.moveToTail();
-                    }
+                    this.moveToTail();
                 }
             }
         } else {//最短路径不能吃到食物，就按照最远路径去找蛇尾
             //console.log('最短路径不能吃到食物')
-            if (isBFS) {
-                this.dfsLongestToTail()
-            } else {
-                this.moveToTail();
-            }
+            this.moveToTail();
             if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
         }
     }
@@ -1160,14 +1148,21 @@ function Snake() {
         //if (this.body.length > 130) {
         //！！！注意每次执行DFS前都要把total和max置为0！！！因为这两变量是全局变量，前一次执行DFS后会污染这两个变量
         total = 0
-        max = '';
+        max = [];
+        dfsPath = [];
+        dfsMaxReachable = 0;
+        for (var y = 0; y < mapArr.length; y++) {
+            for (var x = 0; x < mapArr[0].length; x++) {
+                if (mapArr[y][x] == 0) dfsMaxReachable++
+            }
+        }
         /* 
-        我设置的total最大只能为200000，也就是说在十万次执行后还没找到max，那max就是空，实际上哪怕终点就在起点旁边，
-        DFS还是有可能在十万次内找不到max。DFS按照我设置的策略会优先向右边找，如果终点在起点左边，就有可能在十万次内找不到，
+        我设置的total最大只能为1000000，也就是说在一百万次执行后还没找到max，那max就是空，实际上哪怕终点就在起点旁边，
+        DFS还是有可能在一百万次内找不到max。DFS按照我设置的策略会优先向右边找，如果终点在起点左边，就有可能在一百万次内找不到，
         这时候应该走BFS
          */
         var tailIndex = this.body.length - 1;
-        DFS(mapArr, [this.body[0][1], this.body[0][0]], [this.body[tailIndex][1], this.body[tailIndex][0]], '');
+        DFS(mapArr, this.body[0][1], this.body[0][0], this.body[tailIndex][1], this.body[tailIndex][0], 0, dfsMaxReachable);
         //!!!console.log('dfs最长路径追蛇尾-', max)
         if (max[1]) {
             this.virtualBody = this.body.map(item => [...item])
