@@ -415,7 +415,7 @@ function drawCanvasButton(ctx, text, x, y, width, height, options) {
     ctx.font = opts.font || '20px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, x + width / 2, y + height / 2);
+    ctx.fillText(text, x + width / 2, y + height / 2 + 2);
 
     if (opts.light) {
         createRoundRectPath(ctx, x, y, width, height, [6, 6, 6, 6]);
@@ -821,12 +821,12 @@ function Snake() {
           还原，这样才不会影响下面寻找食物的BFS的判断
          */
         this.virtualSnakeHasEat = false
-        if (this.body.length > 115) {
-            if (this.body.length > 165) {
+        if (this.body.length > 110) {
+            if (this.body.length > 170) {
                 this.dfsLongestToTail()
             } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
-                //当蛇头挨着食物的时候，走最短距离
-                this.shortestMovetoFood()//this.farthestMovetoFood()
+                //当蛇头挨着食物的时候，走最长距离
+                this.farthestMovetoFood()//this.shortestMovetoFood()
             } else {
                 this.moveToTail()
             }
@@ -1071,6 +1071,22 @@ function Snake() {
                 break;
         }
     }
+    // 路径搜索没有候选时选择任意合法邻格，避免继续读取空数组。
+    this.moveToSafeNeighbor = function () {
+        var mapArr = map.initMapArr.map(item => [...item])
+        for (var i = 0; i < this.body.length - 1; i++) {
+            mapArr[this.body[i][1]][this.body[i][0]] = 1
+        }
+        for (var j = 0; j < 4; j++) {
+            var nextX = this.body[0][1] + one[j][0]
+            var nextY = this.body[0][0] + one[j][1]
+            if (check(mapArr, { x: nextX, y: nextY })) {
+                this.direct = nextpath[j]
+                return true
+            }
+        }
+        return false
+    }
     this.moveToTail = function () {
         bfsMax = ''
         bfsNextFarDiret = []
@@ -1093,6 +1109,10 @@ function Snake() {
                 var virtualTailIndex = this.virtualBody.length - 1//注意这里不能用tailIndex，因为虚拟蛇吃完食物后是增加了1粒的
                 BFS(mapArr, [nextX, nextY], [this.virtualBody[virtualTailIndex][1], this.virtualBody[virtualTailIndex][0]], nextpath[i], true);
             }
+        }
+        if (bfsNextFarDiret.length == 0) {
+            this.moveToSafeNeighbor()
+            return
         }
         bfsNextFarDiret.sort((a, b) => b.length - a.length)
         //!!!console.log('最远追蛇尾', bfsNextFarDiret)
@@ -1164,6 +1184,10 @@ function Snake() {
         var tailIndex = this.body.length - 1;
         DFS(mapArr, this.body[0][1], this.body[0][0], this.body[tailIndex][1], this.body[tailIndex][0], 0, dfsMaxReachable);
         //!!!console.log('dfs最长路径追蛇尾-', max)
+        if (!max[0]) {
+            this.moveToSafeNeighbor()
+            return
+        }
         if (max[1]) {
             this.virtualBody = this.body.map(item => [...item])
             this.virtualMove(max[1][0])
@@ -1450,7 +1474,6 @@ window.onload = function () {
         }
 
         if (hitTest(uiState.hitAreas.aiButton, x, y)) {
-            initSpeed = 30;
             toggleRunState();
         }
     };
