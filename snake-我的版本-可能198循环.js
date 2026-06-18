@@ -177,8 +177,7 @@ var map;  //地图
 var snake; //蛇
 var food;  //食物
 var timer; //定时器
-var initSpeed = 5; //初始定时器时间间隔（毫秒）,间接代表蛇移动速度
-var hamiltonianTakeoverLength = 180; //前85%保留原策略偏好，并在进入高复杂度DFS前由哈密顿策略接管。
+var initSpeed = 30; //初始定时器时间间隔（毫秒）,间接代表蛇移动速度
 var grade = 0;  //积分
 var flag = 1;   //（可间接看做）关卡
 var isBegin = false;
@@ -814,139 +813,29 @@ function Snake() {
         }
         map.drawScene();
     }
-    // 构建20x10矩形地图的哈密顿环，并记录每个格子的环序号。
-    this.initHamiltonianCycle = function () {
-        var columnCount = map.width / this.width
-        var rowCount = map.height / this.height
-        this.hamiltonianCycle = [[0, 0]]
-        for (var x = 1; x < columnCount; x++) this.hamiltonianCycle.push([x, 0])
-        for (var y = 1; y < rowCount; y++) {
-            if (y % 2 == 1) {
-                for (var x = columnCount - 1; x >= 1; x--) this.hamiltonianCycle.push([x, y])
-            } else {
-                for (var x = 1; x < columnCount; x++) this.hamiltonianCycle.push([x, y])
-            }
-        }
-        for (var y = rowCount - 1; y >= 1; y--) this.hamiltonianCycle.push([0, y])
-        this.hamiltonianIndex = new Int16Array(columnCount * rowCount)
-        for (var i = 0; i < this.hamiltonianCycle.length; i++) {
-            var point = this.hamiltonianCycle[i]
-            this.hamiltonianIndex[point[1] * columnCount + point[0]] = i
-        }
-    }
-    // 返回从哈密顿环序号from向前走到to所需的步数。
-    this.getHamiltonianDistance = function (from, to) {
-        return (to - from + this.hamiltonianCycle.length) % this.hamiltonianCycle.length
-    }
-    // 检查蛇身从尾到头是否始终沿哈密顿环保持同一顺序。
-    this.isHamiltonianBodyOrdered = function () {
-        var columnCount = map.width / this.width
-        var totalDistance = 0
-        for (var i = this.body.length - 1; i > 0; i--) {
-            var from = this.body[i]
-            var to = this.body[i - 1]
-            var fromIndex = this.hamiltonianIndex[from[1] * columnCount + from[0]]
-            var toIndex = this.hamiltonianIndex[to[1] * columnCount + to[0]]
-            var distance = this.getHamiltonianDistance(fromIndex, toIndex)
-            if (distance == 0) return false
-            totalDistance += distance
-            if (totalDistance >= this.hamiltonianCycle.length) return false
-        }
-        return true
-    }
-    // 根据方向计算蛇头的下一格坐标。
-    this.getNextCellByDirect = function (direct, body) {
-        var sourceBody = body || this.body
-        var point = { x: sourceBody[0][0], y: sourceBody[0][1] }
-        if (direct == 'R') point.x++
-        if (direct == 'L') point.x--
-        if (direct == 'U') point.y--
-        if (direct == 'D') point.y++
-        return point
-    }
-    // 判断方向是否保持蛇身哈密顿顺序，且不会越过蛇尾或当前食物。
-    this.isHamiltonianSafeDirect = function (direct) {
-        if (!direct) return false
-        var point = this.getNextCellByDirect(direct)
-        var columnCount = map.width / this.width
-        var rowCount = map.height / this.height
-        if (point.x < 0 || point.x >= columnCount || point.y < 0 || point.y >= rowCount) return false
-        var willEat = point.x == food.x && point.y == food.y
-        for (var i = 0; i < this.body.length; i++) {
-            if (this.body[i][0] != point.x || this.body[i][1] != point.y) continue
-            if (i == this.body.length - 1 && !willEat) break
-            return false
-        }
-
-        var headIndex = this.hamiltonianIndex[this.body[0][1] * columnCount + this.body[0][0]]
-        var nextIndex = this.hamiltonianIndex[point.y * columnCount + point.x]
-        var tail = this.body[this.body.length - 1]
-        var tailIndex = this.hamiltonianIndex[tail[1] * columnCount + tail[0]]
-        var advance = this.getHamiltonianDistance(headIndex, nextIndex)
-        var tailDistance = this.getHamiltonianDistance(headIndex, tailIndex)
-        if (advance == 0 || advance > tailDistance) return false
-        if (advance == tailDistance && (point.x != tail[0] || point.y != tail[1] || willEat)) return false
-
-        var foodIndex = this.hamiltonianIndex[food.y * columnCount + food.x]
-        var foodDistance = this.getHamiltonianDistance(headIndex, foodIndex)
-        if (foodDistance < tailDistance && advance > foodDistance) return false
-        return true
-    }
-    // 在所有保序方向中选择最接近食物的安全捷径，沿环下一格始终作为兜底。
-    this.chooseHamiltonianDirect = function () {
-        var columnCount = map.width / this.width
-        var headIndex = this.hamiltonianIndex[this.body[0][1] * columnCount + this.body[0][0]]
-        var tail = this.body[this.body.length - 1]
-        var tailIndex = this.hamiltonianIndex[tail[1] * columnCount + tail[0]]
-        var foodIndex = this.hamiltonianIndex[food.y * columnCount + food.x]
-        var tailDistance = this.getHamiltonianDistance(headIndex, tailIndex)
-        var foodDistance = this.getHamiltonianDistance(headIndex, foodIndex)
-        var candidates = []
-        for (var i = 0; i < nextpath.length; i++) {
-            var direct = nextpath[i]
-            if (!this.isHamiltonianSafeDirect(direct)) continue
-            var point = this.getNextCellByDirect(direct)
-            var nextIndex = this.hamiltonianIndex[point.y * columnCount + point.x]
-            var advance = this.getHamiltonianDistance(headIndex, nextIndex)
-            var score = advance * 8 + Math.min(tailDistance - advance, 20)
-            if (foodDistance < tailDistance) score -= (foodDistance - advance) * 20
-            if (point.x == food.x && point.y == food.y) score += 100000
-            candidates.push({ direct: direct, score: score })
-        }
-        if (candidates.length == 0) return false
-        candidates.sort(function (a, b) { return b.score - a.score })
-        var bestScore = candidates[0].score
-        var nearBest = candidates.filter(function (item) { return item.score >= bestScore - 4 })
-        this.direct = nearBest[Math.floor(Math.random() * nearBest.length)].direct
-        return true
-    }
-    this.initHamiltonianCycle()
     //控制蛇移动
     this.move = function () {
         /* ！！！！！！！！！！！在每次移动之前一定要设置this.virtualSnakeHasEat为false
           因为不仅仅下面找食物会改变this.virtualSnakeHasEat的值，而且后面movetoTail也会
           改变this.virtualSnakeHasEat的值，下个回合再走到这里时，一定要把this.virtualSnakeHasEat
           还原，这样才不会影响下面寻找食物的BFS的判断
-        */
+         */
         this.virtualSnakeHasEat = false
-        if (this.body.length >= hamiltonianTakeoverLength) {
-            this.chooseHamiltonianDirect()
-        } else {
-            if (this.body.length > 130) {
-                if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
-                    this.shortestMovetoFood()
-                } else {
-                    this.moveToTail()
-                }
-            } else {//前期优先走最短距离，保留少量原有随机远路。
-                if (Math.random() < 0.11) {
-                    this.farthestMovetoFood()
-                } else {
-                    this.shortestMovetoFood();
-                }
+        if (this.body.length > 110) {
+            if (this.body.length > 170) {
+                this.dfsLongestToTail()
+            } else if ((Math.abs(this.body[0][0] - food.x) == 1 && this.body[0][1] == food.y) || (Math.abs(this.body[0][1] - food.y) == 1 && this.body[0][0] == food.x)) {
+                //当蛇头挨着食物的时候，走最长距离
+                this.farthestMovetoFood()//this.shortestMovetoFood()
+            } else {
+                this.moveToTail()
             }
-            // 原策略方向破坏环顺序时，由哈密顿安全捷径替换。
-            if (!this.isHamiltonianSafeDirect(this.direct)) this.chooseHamiltonianDirect()
+        } else {//蛇身小于130的时候走最短距离吃食物
+            if (Math.random() < 0.11) {//概率小于0.1，走最大距离，大于0.1走最小距离吃
+                this.farthestMovetoFood()
+            } else {
+                this.shortestMovetoFood();
+            }
         }
         //!!!console.log('最终方向', this.direct)
         //给蛇新的位置
@@ -1028,7 +917,7 @@ function Snake() {
             if (minStep < 10000) {//虚拟蛇吃完食物后蛇头和蛇尾能连通，就按照原来的minPath的第一步走，因为虚拟蛇污染了minPath，所以需要引入cacheMinPath
                 //console.log('虚拟蛇走cacheMinPath[0]吃完食物后蛇头和蛇尾能连通')
                 if (this.movetoFoodWillLonely(cacheMinPath)) {
-                    this.farthestMovetoFood()//this.moveToTail();
+                    this.moveToTail();
                 } else {
                     //!!!console.log('虚拟蛇走最短路径' + cacheMinPath[0] + '吃完食物后蛇头和蛇尾能连通')
                     this.direct = cacheMinPath[0][0]
@@ -1045,16 +934,16 @@ function Snake() {
                         this.direct = cacheMinPath[1][0]
                     } else {//虚拟蛇先向着cacheMinPath[1]走吃完食物后蛇头和蛇尾不能连通，就按照BFS去找蛇尾
                         //console.log('虚拟蛇走cacheMinPath[1]吃完食物后蛇头和蛇尾不能连通')
-                        this.farthestMovetoFood();
+                        this.moveToTail();
                     }
                 } else {//cacheMinPath[1]不存在，直接按照最远路径去找蛇尾吧
                     //console.log('cacheMinPath[1]不存在')
-                    this.farthestMovetoFood();
+                    this.moveToTail();
                 }
             }
         } else {//最短路径不能吃到食物，就按照最远路径去找蛇尾
             //console.log('最短路径不能吃到食物')
-            this.farthestMovetoFood();
+            this.moveToTail();
             if (!minPath) console.log('最短路径不能吃到食物、蛇头也连不通')
         }
     }
@@ -1326,18 +1215,16 @@ function Snake() {
                     mapArr[this.virtualBody[i][1]][this.virtualBody[i][0]] = 1
                 }
                 BFS(mapArr, [this.virtualBody[0][1], this.virtualBody[0][0]], [food.y, food.x])
-                // 重新规划后已无法到达食物，当前虚拟方案直接判定失败。
-                if (!minPath[0]) {
-                    this.virtualSnakeHasEat = false
-                    return
-                }
                 /* 
                     因为虚拟蛇每走一步都是重新搜索路线的，此virtualEatFood方法中只是虚拟蛇走第一步时用的cacheDiret[1][0],
                     也就是minPath[1][0]，但是下面一行走第二步时还是用的minPath[0][0]，然后等虚拟蛇走完吃到食物有可能会报告
                     这条路也不通。
                  */
-                var virtualPath = minPath[index] || minPath[0]
-                this.virtualMove(virtualPath[0])
+                if (minPath[1]) {
+                    this.virtualMove(minPath[index][0])
+                } else {
+                    this.virtualMove(minPath[0][0])
+                }
             }
             this.virtualSnakeHasEat = false;
             var mapArr = map.initMapArr.map(item => [...item])
